@@ -4,10 +4,10 @@
 // Apoiare, e para trocar o tema (escuro/médio/claro) — fica aqui porque é
 // a barra fixa visível em toda navegação logada, diferente da tela de login.
 
-import { useTemaCuide, ROTULO_TEMA } from "../theme/cuideTheme";
+import { THEMES } from "../theme/cuideTheme";
 
-export function AppSwitcher({ session, onLogout }) {
-  const { themeKey, tema: t, ciclarTema } = useTemaCuide();
+export function AppSwitcher({ session, onLogout, themeKey, ciclarTema, themeLabel }) {
+  const t = THEMES[themeKey] || THEMES.dark;
 
   const bar = {
     display: "flex",
@@ -16,7 +16,7 @@ export function AppSwitcher({ session, onLogout }) {
     padding: "10px 16px",
     background: t.card,
     borderBottom: `1px solid ${t.border}`,
-    fontFamily: "'Inter', system-ui, sans-serif",
+    fontFamily: "'DM Sans', system-ui, sans-serif",
   };
   const icon = {
     width: 32,
@@ -70,7 +70,7 @@ export function AppSwitcher({ session, onLogout }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <button onClick={ciclarTema} title="Alternar tema" style={themeBtn}>
-          {ROTULO_TEMA[themeKey]}
+          {themeLabel}
         </button>
         <span style={{ color: t.text2, fontSize: 13 }}>{session.nome}</span>
         <button onClick={onLogout} style={logoutBtn}>

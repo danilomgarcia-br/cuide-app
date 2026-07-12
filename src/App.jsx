@@ -9,6 +9,8 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { RequireCuideAccess } from "./auth/RequireCuideAccess";
 import { LoginSSO } from "./auth/LoginSSO";
 import { AppSwitcher } from "./components/AppSwitcher";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { useTemaCuide, ROTULO_TEMA } from "./theme/cuideTheme";
 
 // Carregado sob demanda: o bundle do Cuide (~900KB) só é baixado
 // depois que a sessão existir, então a tela de login fica leve.
@@ -34,6 +36,7 @@ function clearSession() {
 export default function App() {
   const [session, setSession] = useState(null);
   const [checked, setChecked] = useState(false);
+  const { themeKey, ciclarTema } = useTemaCuide();
 
   useEffect(() => {
     const saved = loadSession();
@@ -61,10 +64,24 @@ export default function App() {
 
   return (
     <RequireCuideAccess session={session}>
-      <AppSwitcher session={session} onLogout={handleLogout} />
-      <Suspense fallback={<div style={{padding:40,textAlign:"center"}}>Carregando…</div>}>
-        <CuideSistema onLogout={handleLogout} initialAuth={session} />
-      </Suspense>
+      <AppSwitcher
+        session={session}
+        onLogout={handleLogout}
+        themeKey={themeKey}
+        ciclarTema={ciclarTema}
+        themeLabel={ROTULO_TEMA[themeKey]}
+      />
+      <ErrorBoundary debug>
+        <Suspense fallback={<div style={{padding:40,textAlign:"center"}}>Carregando…</div>}>
+          <CuideSistema
+            onLogout={handleLogout}
+            initialAuth={session}
+            themeKey={themeKey}
+            onToggleTheme={ciclarTema}
+            themeLabel={ROTULO_TEMA[themeKey]}
+          />
+        </Suspense>
+      </ErrorBoundary>
     </RequireCuideAccess>
   );
 }

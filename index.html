@@ -1,13 +1,2393 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cuide</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MiContas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+
+<link rel="icon" type="image/png" href="micontas-icon.png">
+<link rel="apple-touch-icon" href="micontas-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MiContas">
+<meta name="theme-color" content="#0f0f14">
+
+
+<script>
+  if(localStorage.getItem('ff_theme') === 'light') {
+    document.documentElement.classList.add('light-mode');
+  }
+</script>
+
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  
+  const firebaseConfig = {
+    apiKey: "AIzaSyAmifhwuFquGldRB8YjbWUErqaaUF1-wNA",
+    authDomain: "appmicontas.firebaseapp.com",
+    databaseURL: "https://appmicontas-default-rtdb.firebaseio.com",
+    projectId: "appmicontas",
+    storageBucket: "appmicontas.firebasestorage.app",
+    messagingSenderId: "969588602634",
+    appId: "1:969588602634:web:87707e38effeeb1c75ecf3"
+  };
+  
+  const app = initializeApp(firebaseConfig);
+  window.auth = getAuth(app);
+  window.db = getDatabase(app);
+  window.set = set;
+  window.ref = ref;
+  window.get = get;
+  window.child = child;
+  window.onValue = onValue;
+  window.signIn = signInWithEmailAndPassword;
+  window.createAuthUser = createUserWithEmailAndPassword;
+  window.signOut = signOut;
+  window.onAuthStateChanged = onAuthStateChanged;
+  window.sendPasswordResetEmail = sendPasswordResetEmail;
+  window.updateEmail = updateEmail;
+</script>
+
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+
+<body id="body">
+<div id="login-screen">
+  <div class="login-card">
+    <div class="logo" style="border:none;padding:0 0 10px 0">
+      <h1 style="font-size: 2.6rem; margin-bottom: 5px;">Mi<span>Contas</span></h1>
+<span style="font-size: 0.8rem; background: #e11d48; color: #fff; padding: 2px 8px; border-radius: 12px; margin-left: 8px; font-weight: bold;">BETA</span>
+      
+      <p style="font-size: 0.9rem;">Acesse a sua conta</p>
+    </div>
+    
+    <form id="form-login" onsubmit="event.preventDefault(); fazerLogin();">
+        <div class="form-group" style="text-align: left; margin-bottom: 16px;">
+          <label>E-mail</label>
+          <input type="email" id="login-email" autocomplete="username" placeholder="Ex: email@exemplo.com" required>
+        </div>
+   
+        <div class="form-group" style="text-align: left; margin-bottom: 24px;">
+          <label>Senha</label>
+          <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••" required>
+        </div>
+
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1.05rem;" id="btn-login">Entrar</button>
+
+
+        <div style="display:flex;align-items:center;gap:10px;margin:18px 0 6px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:0.73rem;color:var(--text3);font-weight:600;white-space:nowrap">Não tem conta?</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+
+
+        <button type="button" class="btn" style="width:100%;padding:14px;font-size:1rem;font-weight:700;background:linear-gradient(135deg,#22d3a1 0%,#4fa8f5 100%);color:#fff;border:none;border-radius:10px;gap:8px;box-shadow:0 4px 18px rgba(34,211,161,0.28);letter-spacing:0.01em" onclick="toggleAuthMode()">
+          ✨ Criar Conta
+        </button>
+      
+        <button type="button" class="btn btn-outline" style="width:100%;padding:10px;font-size:0.85rem;margin-top:10px;color:var(--text3);border-color:var(--border);cursor:pointer" onclick="abrirEsqueciSenha()">🔑 Esqueci a minha senha</button>
+    </form>
+
+
+    <form id="form-cadastro" style="display:none; max-height: 60vh; overflow-y: auto; padding-right: 5px;" onsubmit="event.preventDefault(); criarContaDireto();">
+        <div class="form-group" style="text-align: left; margin-bottom: 16px;">
+            <label>Nome</label>
+            <input type="text" id="cad-nome" placeholder="O seu nome" required>
+          </div>
+          <div class="form-group" style="text-align: left; margin-bottom: 16px;">
+            <label>E-mail (obrigatório)</label>
+            <input type="email" id="cad-email" placeholder="O seu melhor e-mail" autocomplete="username" required>
+          </div>
+          <div class="form-group" style="text-align: left; margin-bottom: 16px;">
+            <label>Crie uma Senha (Mín. 6 caracteres)</label>
+            <input type="password" id="cad-pass" placeholder="••••••••" autocomplete="new-password" required minlength="6">
+          </div>
+          <div class="form-group" style="text-align: left; margin-bottom: 16px;">
+            <label>Tipo de Conta</label>
+            <div style="display:flex;gap:10px;margin-top:6px">
+              <div class="tipo-conta-card active" id="tipo-conta-pessoal" onclick="selecionarTipoConta('pessoal')">
+                <div class="tipo-conta-icon">👤</div>
+                <div class="tipo-conta-nome">MiPessoal</div>
+                <div class="tipo-conta-preco">Premium · R$ 9,90/mês</div>
+              </div>
+              <div class="tipo-conta-card" id="tipo-conta-empresa" onclick="selecionarTipoConta('empresa')">
+                <div class="tipo-conta-icon">🏢</div>
+                <div class="tipo-conta-nome">MiEmpresas</div>
+                <div class="tipo-conta-preco">R$ 299,00/mês</div>
+              </div>
+            </div>
+            <select id="cad-plano" onchange="onCadPlanoChange(this.value)" style="display:none">
+              <option value="premium">MiPessoal Premium (R$ 9,90/mês)</option>
+              <option value="empresa">MiEmpresas (R$ 299,00/mês)</option>
+            </select>
+          </div>
+          <div id="cad-info-group" style="text-align:left;margin-bottom:16px;background:var(--surface2);padding:14px;border-radius:8px;border-left:3px solid var(--accent);">
+            <div id="cad-info-pessoal">
+              <div style="font-weight:700;color:var(--accent);margin-bottom:6px">👤 MiPessoal Premium — R$ 9,90/mês</div>
+              <div style="font-size:0.82rem;color:var(--text2);line-height:1.6">
+                • <b>Controle financeiro pessoal e familiar</b><br>
+                • <b>Cartões de crédito</b> com parcelamentos<br>
+                • <b>Lançamentos fixos</b> recorrentes<br>
+                • <b>Relatórios PDF e Excel</b>
+              </div>
+            </div>
+            <div id="cad-info-empresa" style="display:none">
+              <div style="font-weight:700;color:var(--accent);margin-bottom:6px">🏢 MiEmpresas — R$ 299,00/mês</div>
+              <div style="font-size:0.82rem;color:var(--text2);line-height:1.6">
+                • <b>Plano de Contas PJ</b> com categorias empresariais<br>
+                • <b>Relatórios empresariais</b> (PDF e Excel)<br>
+                • <b>Contas bancárias</b> corrente e poupança<br>
+                • Todas as funcionalidades Premium incluídas
+              </div>
+            </div>
+            <div style="margin-top:10px;font-size:0.78rem;color:var(--text3)">Após criar a conta, o acesso será liberado pelo administrador.</div>
+          </div>
+          <button type="submit" class="btn btn-green" style="width: 100%; padding: 14px; font-size: 1.05rem; border: none; color: #1a1a2a; background: var(--green); font-weight: 700; border-radius: 10px; box-shadow: 0 4px 16px rgba(34,211,161,0.3);">✅ Criar a Minha Conta</button>
+          <span class="auth-link" onclick="toggleAuthMode()">Já tenho uma conta</span>
+    </form>
+  </div>
+</div>
+
+
+<div id="app-wrapper">
+  <aside class="sidebar">
+    <div class="logo">
+<h1 style="margin-bottom: 0; display: inline-block;">Mi<span>Contas</span></h1>
+<span style="font-size: 0.6rem; background: #e11d48; color: #fff; padding: 1px 5px; border-radius: 4px; vertical-align: super; margin-left: 5px; font-weight: bold;">BETA</span>
+<p id="user-greeting" style="margin-top: 5px;">Olá!</p>
+    </div>
+    <nav>
+      <button class="nav-btn active" onclick="showPage('dashboard')"><span class="icon">📊</span>Início</button>
+      <button class="nav-btn" onclick="showPage('movimentacoes')"><span class="icon">📋</span>Finanças</button>
+      <button class="nav-btn" id="nav-btn-cartao" onclick="showPage('cartao')"><span class="icon">💳</span>Cartões</button>
+
+      <button class="nav-btn" id="nav-btn-projetos" onclick="showPage('obrigacoes')" style="display:none"><span class="icon">📁</span>Projetos</button>
+      <button class="nav-btn" onclick="showPage('familia')"><span class="icon">👤</span>Usuário</button>
+      <button class="nav-btn" onclick="showPage('categorias')"><span class="icon">⚙️</span>Ajustes</button>
+    </nav>
+  </aside>
+
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">
+          <h2>
+            <span class="app-name-brand">Mi<span>Contas</span></span>
+            <span class="title-separator">|</span>
+            <span class="current-page-name" id="pageTitle">Início</span>
+            <span class="lock-badge">FECHADO</span>
+          </h2>
+        </div>
+      </div>
+      
+      <div class="topbar-right">
+        <div class="month-nav">
+          <button onclick="changeMonth(-1)">‹</button>
+          <span id="monthLabel"></span>
+          <button onclick="changeMonth(1)">›</button>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="action-icon-btn" id="bell-btn" onclick="abrirAlertasDia()" title="Vencimentos e Recebimentos" style="position: relative;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            <span id="bell-badge" style="display:none; position:absolute; top:-2px; right:-2px; background:var(--red); color:#fff; font-size:0.6rem; font-weight:bold; width:16px; height:16px; border-radius:50%; align-items:center; justify-content:center;">0</span>
+          </button>
+          <button class="action-icon-btn" onclick="abrirManual()" title="Manual de Uso">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </button>
+          <button class="action-icon-btn" id="lock-btn" onclick="toggleFecharMes()" title="Fechar/Abrir Mês" style="border-radius:50%;width:38px;height:38px"></button>
+          <button class="action-icon-btn" id="theme-btn" onclick="toggleTheme()" title="Alternar Tema"></button>
+
+        </div>
+      </div>
+    </div>
+
+
+    <div id="page-dashboard" class="page active">
+
+      <!-- ── Abas do Início ── -->
+      <div class="tabs" id="tabs-dashboard" style="border-bottom:1px solid var(--border);margin-bottom:16px">
+        <button class="tab-btn active" id="tab-btn-dash-financas" onclick="showTab('dashboard','tab-dash-financas',this)"><span class="tab-icon">📊</span><span class="tab-label">Finanças</span></button>
+        <button class="tab-btn" id="tab-btn-dash-projetos" onclick="showTab('dashboard','tab-dash-projetos',this);calcularMetricasBI();renderRegistrosIndicadores();renderPlanoIndicadores();renderPainelOperacional()" style="display:none"><span class="tab-icon">📁</span><span class="tab-label">Projetos</span></button>
+      </div>
+
+      <div id="tab-dash-financas" class="tab-content active">
+      <div class="kpi-grid" style="grid-template-columns:45fr 55fr">
+        <!-- Col esq 1: Receitas -->
+        <div class="kpi-card" style="--kpi-color: var(--green)">
+          <div class="kpi-label">Receitas (Mês)</div>
+          <div class="kpi-value amount-positive" id="kpi-receita">R$ 0,00</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
+            <div id="kpi-trend-receita" style="display:flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:600"></div>
+            <div id="kpi-trend-receita-pend" style="display:flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:600"></div>
+          </div>
+        </div>
+        <!-- Col dir 1: Despesas -->
+        <div class="kpi-card" style="--kpi-color: var(--red)">
+          <div class="kpi-label">Despesas (Mês)</div>
+          <div class="kpi-value amount-negative" id="kpi-despesa">R$ 0,00</div>
+          <div id="kpi-detalhe-despesa" style="margin-top:6px;font-size:0.75rem;line-height:1.8;font-weight:600"></div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
+            <div id="kpi-trend-despesa" style="display:flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:600"></div>
+            <div id="kpi-trend-despesa-pend" style="display:flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:600"></div>
+          </div>
+        </div>
+        <!-- Col esq 2: A Receber Pendentes (meses anteriores) -->
+        <div class="kpi-card" style="--kpi-color: var(--blue); cursor:pointer" onclick="showPage('movimentacoes');showTab('movimentacoes','tab-pendencias')">
+          <div class="kpi-label">📥 A Receber <b style="color:var(--blue)">Pendentes</b></div>
+          <div class="kpi-value amount-positive" id="kpi-a-receber">R$ 0,00</div>
+          <div class="kpi-trend" id="kpi-trend-a-receber"></div>
+          <button class="btn btn-outline btn-sm" id="btn-cobrar-atrasados" style="display:none;margin-top:8px;font-size:0.7rem;padding:4px 10px" onclick="event.stopPropagation();cobrarRecebiveisWhatsApp()" title="Enviar cobrança dos recebimentos atrasados via WhatsApp">📲 Cobrar atrasados</button>
+        </div>
+        <!-- Col dir 2: Vencidos -->
+        <div class="kpi-card" style="--kpi-color: var(--red); cursor:pointer" onclick="showPage('movimentacoes');showTab('movimentacoes','tab-pendencias')">
+          <div class="kpi-label">🔴 Vencidos</div>
+          <div class="kpi-value amount-negative" id="kpi-vencidos">R$ 0,00</div>
+          <div class="kpi-trend" id="kpi-trend-vencidos"></div>
+        </div>
+        <!-- Col esq 3: Saldo do Mês -->
+        <div class="kpi-card" style="--kpi-color: var(--accent)">
+          <div class="kpi-label">Saldo do Mês <span style="font-size:0.65rem;font-weight:600;color:var(--text3)">(Competência)</span></div>
+          <div class="kpi-value" id="kpi-saldo">R$ 0,00</div>
+          <div class="kpi-trend" id="kpi-trend-saldo"></div>
+        </div>
+        <!-- Col dir 3: Fixas Ativas -->
+        <div class="kpi-card" style="--kpi-color: var(--yellow); cursor:pointer" onclick="showPage('movimentacoes');showTab('movimentacoes','tab-fixas')">
+          <div class="kpi-label">📌 Fixas Ativas</div>
+          <div class="kpi-value" id="kpi-fixas">R$ 0,00</div>
+          <div id="kpi-detalhe-fixas" style="margin-top:6px;font-size:0.75rem;line-height:1.8;font-weight:600"></div>
+          <div class="kpi-trend" id="kpi-trend-fixas"></div>
+        </div>
+      </div>
+
+      <div class="card" id="card-runway" style="margin-bottom:22px;display:none">
+        <div class="card-header">
+          <h3>🛟 Runway de Caixa</h3>
+        </div>
+        <div class="card-body" id="runway-body" style="padding:18px"></div>
+      </div>
+
+      <div class="chart-filters" id="chart-filters">
+        <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+            <div class="chart-filter-group">
+              <label class="chart-filter-label">👤 Usuário</label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <select id="filtro-graf-membro" onchange="renderDashboard()" class="chart-filter-sel">
+                  <option value="">Todos</option>
+                </select>
+                <button class="btn btn-outline btn-sm" id="btn-fixar-usuario-dash" onclick="fixarUsuarioDashboard()" title="Fixar usuário selecionado como padrão" style="padding:6px 8px;font-size:0.85rem;">📌</button>
+              </div>
+            </div>
+            <div class="chart-filter-group">
+              <label class="chart-filter-label">📅 Período</label>
+              <select id="filtro-graf-periodo" onchange="renderDashboard()" class="chart-filter-sel">
+                <option value="mes">Mês atual</option>
+                <option value="3m">Últimos 3 meses</option>
+                <option value="6m">Últimos 6 meses</option>
+                <option value="ano">Ano atual</option>
+              </select>
+            </div>
+        </div>
+      </div>
+
+      <div class="reports-toolbar">
+            <div class="btn-group" style="display:flex;gap:0">
+              <button id="btn-relat-exec" class="btn btn-primary" onclick="gerarRelatorioExecutivoPDF()" style="background:linear-gradient(135deg,#7c6af7,#4fa8f5);border-radius:12px 0 0 12px" title="Relatório Executivo Clássico">📊 Relatório Executivo</button>
+              <button id="btn-relat-exec-2" class="btn btn-primary" onclick="gerarRelatorioExecutivo2PDF()" style="background:#22d3a1;color:#111;border-radius:0 12px 12px 0;border-left:1px solid rgba(0,0,0,0.15);padding-left:10px;padding-right:10px;font-weight:800" title="Relatório Executivo 2.0 (Dashboard BI)">2.0</button>
+            </div>
+            <div style="display:flex;gap:0">
+              <button id="btn-gerencial-toolbar" class="btn btn-outline" onclick="abrirPainelGerencial()" title="Painel Gerencial & Auditoria" style="font-weight:700;gap:6px;border-radius:12px">🔍 Gerencial</button>
+            </div>
+
+            <!-- Botão único de Exportação com dropdown -->
+            <div class="export-dropdown-wrap" id="export-dropdown-wrap">
+              <button class="btn btn-outline" onclick="toggleExportDropdown()" id="btn-exportar-toggle" style="gap:8px;font-weight:700">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="export-dropdown-menu" id="export-dropdown-menu">
+                <!-- Seção Pessoal -->
+                <div class="export-dropdown-section" id="export-sec-pessoal">
+                  <!-- Botões legados mantidos para controle de visibilidade via JS -->
+                  <button id="btn-relat-exec-pdf" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioExecutivoPDFExportar()"></button>
+                  <button id="btn-relat-exec-ppt" class="export-dropdown-item" style="display:none" onclick="closeExportDropdown();gerarApresentacaoResultadosPDF()"></button>
+                  <button id="btn-relat-pf-pdf" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioPDF()"></button>
+                  <button id="btn-relat-pf-csv" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioXLSX()"></button>
+                  <button id="btn-relat-pf-mov-cc-pdf" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioPDFComCartoes()"></button>
+                  <button id="btn-relat-pf-mov-cc" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioMovCartaoXLSX()"></button>
+                  <button id="btn-relat-previsto-realizado" class="export-dropdown-item" style="display:none" onclick="closeExportDropdown();gerarRelatorioPrevistoRealizadoPDF()"></button>
+                  <button id="btn-relat-projecao-fixas" class="export-dropdown-item" onclick="closeExportDropdown();abrirRelatorioProjecaoFixas()"></button>
+                  <!-- Layout visual: linhas com ícone + nome + badges -->
+                  <div class="edi-row">
+                    <span class="edi-row-icon">📊</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();gerarRelatorioExecutivoPDF()">Relatório Executivo</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();gerarRelatorioExecutivoPDFExportar()">PDF</button>
+                      <button class="edi-badge ppt" id="edi-exec-ppt-pf" style="display:none" onclick="closeExportDropdown();gerarApresentacaoResultadosPDF()">PPT</button>
+                    </div>
+                  </div>
+                  <div class="edi-row">
+                    <span class="edi-row-icon">📄</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();gerarRelatorioPDF()">Relatório Financeiro</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();gerarRelatorioPDF()">PDF</button>
+                      <button class="edi-badge xls" onclick="closeExportDropdown();gerarRelatorioXLSX()">XLS</button>
+                    </div>
+                  </div>
+                  <div class="edi-row">
+                    <span class="edi-row-icon">💳</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();gerarRelatorioPDFComCartoes()">Rel. Financeiro com Cartões</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();gerarRelatorioPDFComCartoes()">PDF</button>
+                      <button class="edi-badge xls" onclick="closeExportDropdown();gerarRelatorioMovCartaoXLSX()">XLS</button>
+                    </div>
+                  </div>
+                  <div class="edi-row" id="edi-row-previsto-pf" style="display:none">
+                    <span class="edi-row-icon">📅</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();gerarRelatorioPrevistoRealizadoPDF()">Previsto × Realizado</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();gerarRelatorioPrevistoRealizadoPDF()">PDF</button>
+                      <button class="edi-badge xls" onclick="closeExportDropdown();gerarRelatorioPrevistoRealizado()">XLS</button>
+                    </div>
+                  </div>
+                  <div class="edi-row">
+                    <span class="edi-row-icon">📈</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();abrirRelatorioProjecaoFixas()">Projeção de Fixas</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();abrirRelatorioProjecaoFixas()">PDF</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="export-dropdown-section" id="export-sec-empresa" style="display:none">
+                  <!-- Botões legados mantidos para controle de visibilidade via JS -->
+                  <button id="btn-relat-exec-pj-pdf" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioExecutivoPDFExportar()"></button>
+                  <button id="btn-relat-exec-pj-ppt" class="export-dropdown-item" onclick="closeExportDropdown();gerarApresentacaoResultadosPDF()"></button>
+                  <button id="btn-relat-pj-pdf-grupo" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioPJPDFGrupo()"></button>
+                  <button id="btn-relat-pj-xlsx-grupo" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioPJXLSXGrupo()"></button>
+                  <button id="btn-relat-pj-pdf" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioPJPDF()"></button>
+                  <button id="btn-relat-pj-xlsx" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioPJXLSX()"></button>
+                  <button id="btn-relat-pj-csv" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioXLSX()"></button>
+                  <button id="btn-relat-pj-mov-cc" class="export-dropdown-item" onclick="closeExportDropdown();gerarRelatorioMovCartaoXLSX()"></button>
+                  <!-- Layout visual -->
+                  <div class="edi-row">
+                    <span class="edi-row-icon">📊</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();gerarRelatorioExecutivoPDF()">Relatório Executivo</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();gerarRelatorioExecutivoPDFExportar()">PDF</button>
+                      <button class="edi-badge ppt" onclick="closeExportDropdown();gerarApresentacaoResultadosPDF()">PPT</button>
+                    </div>
+                  </div>
+                  <div class="edi-row">
+                    <span class="edi-row-icon">📄</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();gerarRelatorioPJPDFGrupo()">Relatório Financeiro PC</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();gerarRelatorioPJPDFGrupo()">PDF</button>
+                      <button class="edi-badge xls" onclick="closeExportDropdown();gerarRelatorioPJXLSXGrupo()">XLS</button>
+                    </div>
+                  </div>
+                  <div class="edi-row">
+                    <span class="edi-row-icon">💳</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();gerarRelatorioPJComCartoesPDF()">Rel. Financeiro com Cartões PC</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();gerarRelatorioPJComCartoesPDF()">PDF</button>
+                      <button class="edi-badge xls" onclick="closeExportDropdown();gerarRelatorioMovCartaoXLSX()">XLS</button>
+                    </div>
+                  </div>
+                  <div class="edi-row">
+                    <span class="edi-row-icon">🗂️</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();gerarRelatorioPJPDFGrupo()">Rel. por Plano de Contas Sintético</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();gerarRelatorioPJPDFGrupo()">PDF</button>
+                      <button class="edi-badge xls" onclick="closeExportDropdown();gerarRelatorioPJXLSXGrupo()">XLS</button>
+                    </div>
+                  </div>
+                  <div class="edi-row">
+                    <span class="edi-row-icon">📋</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();gerarRelatorioPJPDF()">Rel. por Plano de Contas Analítico</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();gerarRelatorioPJPDF()">PDF</button>
+                      <button class="edi-badge xls" onclick="closeExportDropdown();gerarRelatorioPJXLSX()">XLS</button>
+                    </div>
+                  </div>
+                  <div class="edi-row" id="edi-row-previsto-pj" style="display:none">
+                    <span class="edi-row-icon">📅</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();gerarRelatorioPrevistoRealizadoPDF()">Previsto × Realizado</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();gerarRelatorioPrevistoRealizadoPDF()">PDF</button>
+                      <button class="edi-badge xls" onclick="closeExportDropdown();gerarRelatorioPrevistoRealizado()">XLS</button>
+                    </div>
+                  </div>
+                  <div class="edi-row">
+                    <span class="edi-row-icon">📈</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();abrirRelatorioProjecaoFixas()">Projeção de Fixas</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();abrirRelatorioProjecaoFixas()">PDF</button>
+                    </div>
+                  </div>
+                  <div class="edi-row">
+                    <span class="edi-row-icon">🤖</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();exportarAnaliseIA()">Análise por IA</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge" style="background:#c96442" onclick="closeExportDropdown();enviarAnaliseIA('claude')" title="Copiar relatório e abrir o Claude">Claude</button>
+                      <button class="edi-badge" style="background:#10a37f" onclick="closeExportDropdown();enviarAnaliseIA('chatgpt')" title="Copiar relatório e abrir o ChatGPT">GPT</button>
+                      <button class="edi-badge" style="background:#4285f4" onclick="closeExportDropdown();enviarAnaliseIA('gemini')" title="Copiar relatório e abrir o Gemini">Gemini</button>
+                      <button class="edi-badge" style="background:#606080" onclick="closeExportDropdown();exportarAnaliseIA()" title="Baixar como arquivo TXT">TXT</button>
+                    </div>
+                  </div>
+                  <div class="edi-row" id="edi-row-pj-gerencial">
+                    <span class="edi-row-icon">🔍</span>
+                    <span class="edi-row-name" onclick="closeExportDropdown();abrirPainelGerencial()">Painel Gerencial</span>
+                    <div class="edi-row-badges">
+                      <button class="edi-badge pdf" onclick="closeExportDropdown();exportarGerencialPDF()">PDF</button>
+                      <button class="edi-badge" style="background:linear-gradient(135deg,#7c6af7,#4fa8f5);color:#fff" onclick="closeExportDropdown();abrirPainelGerencial()">VER</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+      </div>
+      
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3>Despesas por Categoria</h3>
+          <div class="chart-wrap">
+            <div class="chart-skeleton"></div>
+            <canvas id="chartCategorias"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>Fluxo Mensal</h3>
+          <div class="chart-wrap">
+            <div class="chart-skeleton"></div>
+            <canvas id="chartFluxo"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card" style="margin-bottom:22px">
+        <div class="card-header"><h3>Comparativo Mensal de Categorias (Top 5)</h3></div>
+        <div class="card-body" style="padding:18px">
+          <div class="chart-wrap" style="height:250px">
+            <div class="chart-skeleton"></div>
+            <canvas id="chartCatComp"></canvas>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="card" id="card-dre-dinamica" style="margin-bottom:22px;display:none">
+        <div class="card-header" style="flex-wrap:wrap;gap:8px">
+          <h3>📊 DRE Dinâmica</h3>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="dre-din-periodo" onchange="_dreDinPeriodoChange(this.value)" class="chart-filter-sel" title="Período do DRE Dinâmica">
+              <option value="mes">📅 Mês atual</option>
+              <option value="3m">📅 Últimos 3 meses</option>
+              <option value="6m">📅 Últimos 6 meses</option>
+              <option value="ano">📅 Ano atual</option>
+            </select>
+            <div class="export-dropdown-wrap" id="ia-dropdown-wrap" style="position:relative">
+              <button class="btn btn-outline btn-sm" onclick="toggleIADropdown()" title="Copiar o relatório e abrir o site de uma IA para colar e analisar">🤖 Exportar p/ IA</button>
+              <div class="export-dropdown-menu" id="ia-dropdown-menu" style="min-width:250px">
+                <div class="export-dropdown-section">
+                  <div class="export-dropdown-label">Copiar e abrir</div>
+                  <div class="edi-row" style="cursor:pointer" onclick="enviarAnaliseIA('claude')"><span class="edi-row-icon">✦</span><span class="edi-row-name">Claude</span></div>
+                  <div class="edi-row" style="cursor:pointer" onclick="enviarAnaliseIA('chatgpt')"><span class="edi-row-icon">💬</span><span class="edi-row-name">ChatGPT</span></div>
+                  <div class="edi-row" style="cursor:pointer" onclick="enviarAnaliseIA('gemini')"><span class="edi-row-icon">✨</span><span class="edi-row-name">Gemini</span></div>
+                </div>
+                <div class="export-dropdown-section">
+                  <div class="edi-row" style="cursor:pointer" onclick="closeIADropdown();exportarAnaliseIA()"><span class="edi-row-icon">⬇️</span><span class="edi-row-name">Baixar TXT</span></div>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('dre-din-detalhe').style.display=document.getElementById('dre-din-detalhe').style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Expandir')?'🔽 Recolher Contas':'▶️ Expandir Contas'">▶️ Expandir Contas</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:18px">
+          <div id="dre-din-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px"></div>
+          <div id="dre-din-grupos"></div>
+          <div id="dre-din-detalhe" style="display:none;margin-top:10px"></div>
+        </div>
+      </div>
+
+
+      <div class="card" style="margin-bottom:0">
+        <div class="card-header" style="cursor:pointer" onclick="showPage('movimentacoes');showTab('movimentacoes','tab-pendencias')">
+          <h3>⏳ Próximos Vencimentos</h3>
+          <span style="font-size:0.78rem;color:var(--text3)">Ver todos →</span>
+        </div>
+        <div class="card-body" id="dash-proximos"></div>
+      </div>
+      </div>
+      <div id="tab-dash-projetos" class="tab-content">
+        <div class="row hide-if-closed" style="justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:10px">
+          <div class="chart-filter-group">
+            <label class="chart-filter-label">&#128197; Período Global</label>
+            <select id="op-periodo-global" onchange="renderPainelOperacional()" class="chart-filter-sel">
+              <option value="3m">Últimos 3 Meses</option>
+              <option value="6m" selected>Últimos 6 Meses</option>
+              <option value="12m">Últimos 12 Meses</option>
+              <option value="yoy">Comparativo Anual (YoY)</option>
+            </select>
+          </div>
+        </div>
+        <div id="op-kpi-grid" class="kpi-grid" style="margin-top:16px"></div>
+        <div class="charts-row">
+          <div class="chart-card">
+            <h3>&#128202; Comparativo Anual (mês a mês)</h3>
+            <div class="filters-wrap" style="margin-bottom:10px">
+              <select id="op-graf-comparativo-ind" onchange="renderGraficoComparativoAnual()" class="filter-sel"></select>
+            </div>
+            <div class="chart-wrap">
+              <div class="chart-skeleton"></div>
+              <canvas id="chartOpComparativo"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>&#128200; Evolução do Indicador</h3>
+            <div class="filters-wrap" style="margin-bottom:10px">
+              <select id="op-graf-evolucao-ind" onchange="renderGraficoEvolucao()" class="filter-sel"></select>
+            </div>
+            <div class="chart-wrap">
+              <div class="chart-skeleton"></div>
+              <canvas id="chartOpEvolucao"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:22px">
+          <div class="card-header">
+            <h3>&#128256; Correlação entre Indicadores</h3>
+          </div>
+          <div class="card-body" style="padding:16px 18px">
+            <div class="filters-wrap" style="margin-bottom:10px">
+              <select id="op-corr-x" onchange="renderGraficoCorrelacao()" class="filter-sel"></select>
+              <span style="align-self:center;color:var(--text3);font-weight:700">×</span>
+              <select id="op-corr-y" onchange="renderGraficoCorrelacao()" class="filter-sel"></select>
+            </div>
+            <div class="chart-wrap" style="height:280px">
+              <div class="chart-skeleton"></div>
+              <canvas id="chartOpCorrelacao"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card" id="card-bi-indicadores" style="margin-bottom:24px">
+          <div class="card-header" style="background:linear-gradient(135deg,rgba(124,106,247,0.15),rgba(34,211,161,0.1))">
+            <h3>&#128202; Análise de Eficiência Operacional (BI)</h3>
+          </div>
+          <div class="card-body" style="padding:16px 18px">
+            <div class="filters-wrap" style="margin-bottom:14px">
+              <select id="bi-financeiro-tipo" onchange="calcularMetricasBI()" class="filter-sel">
+                <option value="receita">&#128229; Faturamento (Receita)</option>
+                <option value="despesa">&#128228; Despesa Total</option>
+              </select>
+              <span style="align-self:center;color:var(--text3);font-weight:700">÷</span>
+              <select id="bi-indicador-alvo" onchange="calcularMetricasBI()" class="filter-sel"></select>
+              <select id="bi-periodo" onchange="calcularMetricasBI()" class="filter-sel">
+                <option value="mes">Este Mês</option>
+                <option value="3m">Últimos 3 Meses</option>
+                <option value="6m">Últimos 6 Meses</option>
+                <option value="12m">Últimos 12 Meses</option>
+              </select>
+            </div>
+            <div id="bi-resultado"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:24px">
+          <div class="card-header">
+            <h3>&#128197; Matriz Histórica (Mês × Indicador)</h3>
+          </div>
+          <div class="card-body" id="op-matriz-historico" style="padding:0;overflow-x:auto"></div>
+        </div>
+      </div>
+    </div>
+
+
+   <div id="page-movimentacoes" class="page">
+      <div class="tabs" id="tabs-movimentacoes">
+        <button class="tab-btn active" onclick="showTab('movimentacoes','tab-movimentos',this)"><span class="tab-icon">📋</span><span class="tab-label">Transações</span></button>
+        <button class="tab-btn" onclick="showTab('movimentacoes','tab-pendencias',this)"><span class="tab-icon">⏳</span><span class="tab-label">Pendências</span></button>
+        <button class="tab-btn" id="tab-btn-cartoes-mov" onclick="showTab('movimentacoes','tab-cartoes-mov',this);renderCartoes()" style="display:none"><span class="tab-icon">💳</span><span class="tab-label">Cartões</span></button>
+        <button class="tab-btn" id="tab-btn-fixas-mov" onclick="showTab('movimentacoes','tab-fixas',this)"><span class="tab-icon">📌</span><span class="tab-label">Fixas</span></button>
+        <button class="tab-btn" id="tab-btn-contas" onclick="showTab('movimentacoes','tab-contas',this);renderContasBancariasLista();renderTransacoesPorConta()" style="display:none"><span class="tab-icon">🏦</span><span class="tab-label">Contas</span></button>
+        <button class="tab-btn" id="tab-btn-investimentos" onclick="showTab('movimentacoes','tab-investimentos',this);renderInvestimentosLista()" style="display:none"><span class="tab-icon">📈</span><span class="tab-label">Investimentos</span></button>
+        <button class="tab-btn" id="tab-btn-emprestimos" onclick="showTab('movimentacoes','tab-emprestimos',this);renderEmprestimosLista()" style="display:none"><span class="tab-icon">🏦</span><span class="tab-label">Empréstimos</span></button>
+        <button class="tab-btn" id="tab-btn-orcamento" onclick="showTab('movimentacoes','tab-orcamento',this);renderOrcamento()" style="display:none"><span class="tab-icon">🎯</span><span class="tab-label">Planejamento</span></button>
+      </div>
+
+
+      <div id="tab-movimentos" class="tab-content active">
+        <div class="row hide-if-closed">
+          <button class="btn btn-primary" onclick="novaTransacao('despesa')">+ Nova Despesa</button>
+          <button class="btn btn-green" onclick="novaTransacao('receita')">+ Nova Receita</button>
+          <button class="btn btn-outline" onclick="importarExtrato()">📂 Importar Extrato</button>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>Transações</h3>
+            <div class="filters-wrap">
+              <select id="filtro-tipo" onchange="renderMovimentacoes()" class="filter-sel">
+                <option value="">Todos os tipos</option><option value="receita">Receitas</option><option value="despesa">Despesas</option>
+              </select>
+              <select id="filtro-status-mov" onchange="renderMovimentacoes()" class="filter-sel">
+                <option value="">Todos os status</option><option value="pago">Efetivado</option><option value="pendente">Pendente</option>
+              </select>
+              <select id="sort-mov" onchange="renderMovimentacoes()" class="filter-sel">
+                <option value="data-desc">Data (Mais novas)</option>
+                <option value="data-asc">Data (Mais antigas)</option>
+                <option value="valor-desc">Valor (Maior)</option>
+                <option value="valor-asc">Valor (Menor)</option>
+                <option value="alfa">Alfabética (A-Z)</option>
+                <option value="tipo">Agrupar por Tipo</option>
+              </select>
+              <div class="icon-search">
+                <button class="btn btn-outline btn-sm" onclick="toggleIconSearch('mov-search')" title="Pesquisar">🔍</button>
+                <input type="text" id="mov-search" class="icon-search-input" placeholder="Pesquisar..." oninput="handleSearchInput(renderMovimentacoes)">
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="fixarFiltro('movimentacoes')" title="Fixar estes filtros como padrão">📌</button>
+            </div>
+          </div>
+          <div class="card-body" id="extrato-lista"></div>
+        </div>
+      </div>
+
+
+      <div id="tab-pendencias" class="tab-content">
+        <div style="font-size:0.85rem; color:var(--text3); margin-bottom:18px; line-height: 1.5;">
+          Aqui estão todas as contas pendentes. Quando pagar ou receber, clique em "✔️ Baixa" para efetivar a transação.
+        </div>
+        <div class="kpi-grid" style="grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px;">
+          <div class="kpi-card" style="--kpi-color: var(--green); padding: 14px;">
+            <div class="kpi-label">Expectativa de Recebimento</div>
+            <div class="kpi-value amount-positive" id="pen-receber-tot">R$ 0,00</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color: var(--red); padding: 14px;">
+            <div class="kpi-label">Dívidas / A Pagar</div>
+            <div class="kpi-value amount-negative" id="pen-pagar-tot">R$ 0,00</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>Relatório de Pendências</h3>
+            <div class="filters-wrap">
+              <select id="filtro-tipo-pend" onchange="renderPendencias()" class="filter-sel">
+                <option value="">Todos os tipos</option><option value="receita">Receitas</option><option value="despesa">Despesas</option>
+              </select>
+              <select id="filtro-periodo-pend" onchange="renderPendencias()" class="filter-sel">
+                <option value="vencidas">Vencidas</option>
+                <option value="mes" selected>Mês corrente</option>
+                <option value="proximo">Próximo mês</option>
+                <option value="3m">Próximos 3 meses</option>
+                <option value="6m">Próximos 6 meses</option>
+                <option value="todas">Todas</option>
+              </select>
+              <select id="sort-pend" onchange="renderPendencias()" class="filter-sel">
+                <option value="data-asc">Vencimento (Próximos)</option>
+                <option value="data-desc">Vencimento (Mais distantes)</option>
+              </select>
+              <div class="icon-search">
+                <button class="btn btn-outline btn-sm" onclick="toggleIconSearch('pend-search')" title="Pesquisar">🔍</button>
+                <input type="text" id="pend-search" class="icon-search-input" placeholder="Pesquisar..." oninput="handleSearchInput(renderPendencias)">
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="fixarFiltro('pendencias')" title="Fixar estes filtros como padrão">📌</button>
+            </div>
+          </div>
+          <div class="card-body" id="pendencias-lista"></div>
+        </div>
+      </div>
+
+
+      <div id="tab-fixas" class="tab-content">
+        <div style="font-size:0.85rem; color:var(--text3); margin-bottom:18px; line-height: 1.5;">
+          As contas aqui servem como <b>Molde Base</b>. Ao importar, entram como Pendentes ou direto na fatura do Cartão.
+        </div>
+        <div class="row hide-if-closed">
+          <button class="btn btn-primary" onclick="novaFixa('despesa')">+ Despesa Fixa</button>
+          <button class="btn btn-green" onclick="novaFixa('receita')">+ Receita Fixa</button>
+          <button class="btn btn-outline" onclick="importarFixas()">📥 Importar p/ Mês</button>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>Contas Base</h3>
+            <div class="filters-wrap">
+              <select id="filtro-tipo-fixas" onchange="renderFixas()" class="filter-sel">
+                <option value="">Todas (Tipos)</option><option value="receita">Receitas</option><option value="despesa">Despesas</option>
+              </select>
+              <select id="filtro-status-fixas" onchange="renderFixas()" class="filter-sel">
+                <option value="">Todas (Status)</option><option value="Ativa">Ativas</option><option value="Suspensa">Suspensas</option>
+              </select>
+              <select id="sort-fixas" onchange="renderFixas()" class="filter-sel">
+                <option value="dia-asc">Dia Vencimento</option>
+                <option value="valor-desc">Valor (Maior)</option>
+                <option value="valor-asc">Valor (Menor)</option>
+                <option value="alfa">Alfabética (A-Z)</option>
+              </select>
+              <div class="icon-search">
+                <button class="btn btn-outline btn-sm" onclick="toggleIconSearch('fixas-search')" title="Pesquisar">🔍</button>
+                <input type="text" id="fixas-search" class="icon-search-input" placeholder="Pesquisar..." oninput="handleSearchInput(renderFixas)">
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="fixarFiltro('fixas')" title="Fixar estes filtros como padrão">📌</button>
+            </div>
+          </div>
+          <div class="card-body" id="fixas-lista"></div>
+        </div>
+      </div>
+
+      <div id="tab-contas" class="tab-content">
+        <!-- Gestão de Contas Bancárias -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header" style="background:linear-gradient(135deg,rgba(79,168,245,0.15),rgba(34,211,161,0.1))">
+            <h3>🏦 Contas Correntes / Poupança</h3>
+            <button class="btn btn-primary btn-sm" onclick="novaContaBancaria()">＋ Nova Conta</button>
+          </div>
+          <div class="card-body" id="contas-bancarias-lista"></div>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text3); margin-bottom:18px; line-height: 1.5;">
+          Selecione uma conta para ver todas as transações vinculadas a ela e o saldo final.
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <h3>🏦 Extrato por Conta</h3>
+            <div class="filters-wrap">
+              <select id="filtro-conta-bancaria" onchange="renderTransacoesPorConta()" class="filter-sel">
+                <option value="">Selecione uma conta...</option>
+              </select>
+              <select id="filtro-conta-periodo" onchange="renderTransacoesPorConta()" class="filter-sel">
+                <option value="mes">Mês corrente</option>
+                <option value="3m">Últimos 3 meses</option>
+                <option value="6m">Últimos 6 meses</option>
+                <option value="ano">Ano corrente</option>
+                <option value="todas">Todas as datas</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="conta-saldo-resumo"></div>
+            <div id="conta-extrato-lista" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </div>
+      <!-- ===== TAB INVESTIMENTOS ===== -->
+      <div id="tab-investimentos" class="tab-content">
+        <div class="row hide-if-closed" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+          <button class="btn btn-primary" onclick="novoInvestimento()">＋ Novo Investimento</button>
+          <div style="display:flex;gap:0">
+            <button class="btn btn-primary btn-sm" id="btn-inv-ativos" onclick="filtrarInvestimentos('ativos')">Ativos</button>
+            <button class="btn btn-outline btn-sm" id="btn-inv-todos" onclick="filtrarInvestimentos('todos')">Todos</button>
+          </div>
+        </div>
+        <div id="investimentos-kpis" class="kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px"></div>
+        <div id="investimentos-lista"></div>
+      </div>
+      <!-- ===== TAB EMPRÉSTIMOS ===== -->
+      <div id="tab-emprestimos" class="tab-content">
+        <div class="row hide-if-closed" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+          <button class="btn btn-primary" onclick="novoEmprestimo()">＋ Novo Empréstimo</button>
+          <div style="display:flex;gap:0">
+            <button class="btn btn-primary btn-sm" id="btn-emp-ativos" onclick="filtrarEmprestimos('ativos')">Ativos</button>
+            <button class="btn btn-outline btn-sm" id="btn-emp-todos" onclick="filtrarEmprestimos('todos')">Todos</button>
+          </div>
+        </div>
+        <div id="emprestimos-kpis" class="kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px"></div>
+        <div id="emprestimos-lista"></div>
+      </div>
+      <!-- ===== TAB ORÇAMENTO ===== -->
+      <div id="tab-orcamento" class="tab-content">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header" style="background:linear-gradient(135deg,rgba(245,197,66,0.13),rgba(124,106,247,0.1));flex-wrap:wrap;gap:10px">
+            <h3>🎯 Planejamento — Previsto × Realizado</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <select id="orc-membro" onchange="renderOrcamento()" class="filter-sel" style="min-width:130px"></select>
+              <select id="orc-ano" onchange="renderOrcamento()" class="filter-sel" style="font-weight:700"></select>
+              <select id="orc-modo" onchange="renderOrcamento()" class="filter-sel">
+                <option value="plano_contas">Plano de Contas</option>
+                <option value="receitas">Receitas (Total)</option>
+                <option value="despesas">Despesas (Total)</option>
+                <option value="saldo">Saldo (Rec - Desp)</option>
+                <option value="indicadores">Indicadores</option>
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="exportarOrcamentoCSV()">📥 CSV</button>
+              <button class="btn btn-outline btn-sm" onclick="exportarOrcamentoPDF()" style="color:var(--red)">📄 PDF</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:16px">
+            <div id="orc-grade" style="overflow-x:auto"></div>
+            <div id="orc-chart-wrap" class="chart-wrap" style="height:260px;margin-top:20px"><div class="chart-skeleton"></div><canvas id="chartOrcamento"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <!-- ===== TAB CARTÕES ===== -->
+      <div id="tab-cartoes-mov" class="tab-content">
+        <div class="row hide-if-closed" style="margin-bottom:16px">
+          <button class="btn btn-primary" onclick="novoCartao()">+ Novo Cartão</button>
+          <button class="btn btn-outline" onclick="novoLancamentoCC()">+ Lançar Compra</button>
+          <button class="btn btn-outline" onclick="abrirFecharFatura()">🔒 Fechar Fatura</button>
+        </div>
+        <div id="cartoes-grid-mov" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:16px;margin-bottom:24px"></div>
+        <div class="card">
+          <div class="card-header">
+            <h3>Gastos do Mês</h3>
+            <div class="filters-wrap">
+              <select id="filtro-cartao-cc-mov" onchange="renderCartoes()" class="filter-sel">
+                <option value="">Todos os cartões</option>
+              </select>
+              <select id="sort-cc-mov" onchange="renderCartoes()" class="filter-sel">
+                <option value="data-desc">Data (Mais novas)</option>
+                <option value="data-asc">Data (Mais antigas)</option>
+                <option value="compra-desc">Compra (Mais novas)</option>
+                <option value="compra-asc">Compra (Mais antigas)</option>
+                <option value="valor-desc">Valor (Maior)</option>
+                <option value="valor-asc">Valor (Menor)</option>
+                <option value="alfa">Alfabética (A-Z)</option>
+              </select>
+              <div class="icon-search">
+                <button class="btn btn-outline btn-sm" onclick="toggleIconSearch('cc-search-mov')" title="Pesquisar">🔍</button>
+                <input type="text" id="cc-search-mov" class="icon-search-input" placeholder="Pesquisar..." oninput="handleSearchInput(renderCartoes)">
+              </div>
+              <button id="btn-fixar-cc-mov" class="btn btn-outline btn-sm" onclick="fixarFiltrosCartoes('cc-mov')" title="Fixar filtros atuais como padrão" style="padding:6px 8px;font-size:0.85rem;">📌</button>
+            </div>
+          </div>
+          <div class="card-body" id="cc-lancamentos-mov"></div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <div id="page-cartao" class="page">
+      <div class="row hide-if-closed">
+        <button class="btn btn-primary" onclick="novoCartao()">+ Novo Cartão</button>
+        <button class="btn btn-outline" onclick="novoLancamentoCC()">+ Lançar Compra</button>
+        <button class="btn btn-outline" onclick="abrirFecharFatura()">🔒 Fechar Fatura</button>
+      </div>
+      <div id="cartoes-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:16px;margin-bottom:24px"></div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Gastos do Mês</h3>
+          <div class="filters-wrap">
+            <select id="filtro-cartao-cc" onchange="renderCartoes()" class="filter-sel">
+              <option value="">Todos os cartões</option>
+            </select>
+            <select id="sort-cc" onchange="renderCartoes()" class="filter-sel">
+              <option value="data-desc">Data (Mais novas)</option>
+              <option value="data-asc">Data (Mais antigas)</option>
+              <option value="compra-desc">Compra (Mais novas)</option>
+              <option value="compra-asc">Compra (Mais antigas)</option>
+              <option value="valor-desc">Valor (Maior)</option>
+              <option value="valor-asc">Valor (Menor)</option>
+              <option value="alfa">Alfabética (A-Z)</option>
+            </select>
+            <div class="icon-search">
+              <button class="btn btn-outline btn-sm" onclick="toggleIconSearch('cc-search')" title="Pesquisar">🔍</button>
+              <input type="text" id="cc-search" class="icon-search-input" placeholder="Pesquisar..." oninput="handleSearchInput(renderCartoes)">
+            </div>
+            <button id="btn-fixar-cc" class="btn btn-outline btn-sm" onclick="fixarFiltrosCartoes('cc')" title="Fixar filtros atuais como padrão" style="padding:6px 8px;font-size:0.85rem;">📌</button>
+          </div>
+        </div>
+        <div class="card-body" id="cc-lancamentos"></div>
+      </div>
+    </div>
+
+
+    <div id="page-familia" class="page">
+      <div class="tabs">
+         <button class="tab-btn active" onclick="showTab('familia','tab-membros',this)"><span class="tab-icon">👤</span><span class="tab-label">Usuários</span></button>
+        <button class="tab-btn" onclick="showTab('familia','tab-divisoes',this)"><span class="tab-icon">📊</span><span class="tab-label">Resumo</span></button>
+        <button class="tab-btn" id="tab-btn-auditoria" onclick="showTab('familia','tab-auditoria',this);renderAuditoria()" style="display:none"><span class="tab-icon">🔍</span><span class="tab-label">Auditoria</span></button>
+        <button class="tab-btn" id="tab-btn-assinatura" onclick="showTab('familia','tab-assinatura',this);renderMinhaAssinatura()"><span class="tab-icon">💳</span><span class="tab-label">Assinatura</span></button>
+        <button class="tab-btn" onclick="showTab('familia','tab-backup',this)"><span class="tab-icon">💾</span><span class="tab-label">Backup</span></button>
+        <button class="tab-btn" id="tab-btn-admin-acesso" onclick="showTab('familia','tab-admin-acesso',this);renderAdmin();renderAdminPagamentos()" style="display:none"><span class="tab-icon">🛡️</span><span class="tab-label">Controle de Acesso</span></button>
+      </div>
+      <div id="tab-membros" class="tab-content active">
+        <div class="row hide-if-closed" style="justify-content:space-between;align-items:center;">
+          <button class="btn btn-primary" onclick="novoMembro()">+ Novo Usuário</button>
+          <button class="btn btn-outline" onclick="fazerLogout()" style="color:var(--red);border-color:var(--red);gap:6px;display:flex;align-items:center;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Sair
+          </button>
+        </div>
+        <div class="card"><div class="card-body" id="membros-lista"></div></div>
+      </div>
+      <div id="tab-divisoes" class="tab-content">
+        <div class="card"><div class="card-body" id="resumo-membros-lista"></div></div>
+      </div>
+      <div id="tab-auditoria" class="tab-content"></div>
+      <div id="tab-assinatura" class="tab-content"></div>
+      <div id="tab-backup" class="tab-content">
+        <div class="card">
+          <div class="card-header"><h3>💾 Backup e Sistema</h3></div>
+          <div class="card-body" style="padding: 16px;">
+            <div class="row ajustes-btn-row">
+              <button class="btn btn-primary" onclick="exportarDados()">📥 Exportar</button>
+              <button class="btn btn-outline" onclick="document.getElementById('fileBackup').click()">📤 Importar</button>
+              <input type="file" id="fileBackup" accept=".json" style="display:none" onchange="importarDados(event)">
+              <button class="btn btn-outline" style="color:var(--green)" onclick="exportarTudoXLSX()">📊 Exportar tudo em Excel</button>
+              <button class="btn btn-danger" onclick="abrirLimparTudo()">🗑 Limpar</button>
+            </div>
+            <div style="font-size:0.78rem;color:var(--text3);margin-top:10px;line-height:1.5">
+              <b>Exportar</b> gera o backup em .json (usado para restaurar os dados no próprio MiContas). <b>Exportar tudo em Excel</b> gera uma planilha .xlsx com uma aba por tipo de dado (transações, fixas, cartões, investimentos, empréstimos etc.), para consulta e análise fora do app.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="tab-admin-acesso" class="tab-content">
+        <div class="card">
+          <div class="card-header"><h3>🛡️ Controle de Acesso</h3></div>
+          <div class="card-body" style="padding:16px">
+            <p style="font-size:0.85rem;color:var(--text3);margin-bottom:14px;line-height:1.6">Quando alguém cria uma conta nova, ela fica em <b>aguardando liberação</b> até você aprovar o acesso aqui. Apenas o administrador geral (<b>danilomgarcia@outlook.com</b>) vê esta aba.</p>
+            <div class="row" style="margin-bottom:12px">
+              <button class="btn btn-outline" onclick="renderAdmin()">🔄 Atualizar lista</button>
+            </div>
+            <div id="admin-solicitacoes-lista"></div>
+          </div>
+        </div>
+
+        <!-- Gestão de Pagamentos -->
+        <div class="card" style="margin-top:24px;">
+          <div class="card-header" style="background:linear-gradient(135deg,rgba(245,197,66,0.15),rgba(240,79,94,0.1));">
+            <h3>💰 Gestão de Pagamentos (Assinaturas)</h3>
+          </div>
+          <div class="card-body" style="padding:16px;">
+            <p style="font-size:0.85rem;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+              Acompanhe os pagamentos mensais dos usuários aprovados. Utilize o botão <b>"✔ Quitar"</b> para dar baixa manual após receber o PIX. Contas com cancelamento solicitado serão inativadas automaticamente após 30 dias.
+            </p>
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+              <button class="btn btn-outline" onclick="renderAdminPagamentos()" style="font-size:0.82rem;">🔄 Atualizar</button>
+              <button class="btn btn-outline" id="btn-filtro-vencer" onclick="filtrarPagamentos('vencer')" style="font-size:0.82rem;">⏰ A Vencer</button>
+              <button class="btn btn-outline" id="btn-filtro-todos" onclick="filtrarPagamentos('todos')" style="font-size:0.82rem;border-color:var(--accent);color:var(--accent);">Todos</button>
+            </div>
+            <div id="admin-pagamentos-lista"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div id="page-categorias" class="page">
+
+      <!-- ── Abas de Ajustes ── -->
+      <div class="tabs" id="tabs-categorias" style="border-bottom:1px solid var(--border);margin-bottom:16px">
+        <button class="tab-btn active" id="tab-btn-ajustes-plano" onclick="showTab('categorias','tab-ajustes-plano',this)"><span class="tab-icon">🗂️</span><span class="tab-label">Finanças</span></button>
+        <button class="tab-btn" id="tab-btn-ajustes-projetos" onclick="showTab('categorias','tab-ajustes-projetos',this)"><span class="tab-icon">📁</span><span class="tab-label">Projetos</span></button>
+      </div>
+
+      <!-- ── Aba: Finanças (Plano de Contas + Cat. Básicas + Contas Bancárias) ── -->
+      <div id="tab-ajustes-plano" class="tab-content active">
+        <!-- Seção: Contas Bancárias (Empresa) -->
+        <div id="contas-bancarias-section" style="display:none">
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-body" style="padding:16px">
+              <label class="checkbox-wrapper" style="font-size:0.9rem;font-weight:600">
+                <input type="checkbox" id="pj-gestao-contas-ajustes" onchange="toggleContasBancariasAjustes(this.checked)">
+                <span>🏦 Habilitar Contas Correntes / Poupança</span>
+              </label>
+              <div style="font-size:0.8rem;color:var(--text3);margin-top:6px;line-height:1.5">
+                Ativa a aba <b>🏦 Contas</b> em Finanças para controlar saldo e extrato por conta bancária.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="investimentos-toggle-section" style="display:none">
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-body" style="padding:16px">
+              <label class="checkbox-wrapper" style="font-size:0.9rem;font-weight:600">
+                <input type="checkbox" id="pj-gestao-investimentos-ajustes" onchange="toggleInvestimentosAjustes(this.checked)">
+                <span>📈 Habilitar Investimentos</span>
+              </label>
+              <div style="font-size:0.8rem;color:var(--text3);margin-top:6px;line-height:1.5">
+                Ativa a aba <b>📈 Investimentos</b> em Finanças para controlar aportes, rendimentos e resgates de aplicações separados do resultado operacional.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="emprestimos-toggle-section" style="display:none">
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-body" style="padding:16px">
+              <label class="checkbox-wrapper" style="font-size:0.9rem;font-weight:600">
+                <input type="checkbox" id="pj-gestao-emprestimos-ajustes" onchange="toggleEmprestimosAjustes(this.checked)">
+                <span>🏦 Habilitar Empréstimos</span>
+              </label>
+              <div style="font-size:0.8rem;color:var(--text3);margin-top:6px;line-height:1.5">
+                Ativa a aba <b>🏦 Empréstimos</b> em Finanças para controlar empréstimos tomados ou concedidos, com parcelas, juros e saldo devedor separados do resultado operacional.
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Seção: Categorias Básicas -->
+        <div id="tab-ajustes-cat-basicas">
+          <div id="pf-cats-toggle-wrapper" style="display:none;margin-bottom:16px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)">
+            <label class="checkbox-wrapper" style="font-size:0.85rem;font-weight:600;color:var(--text2)">
+              <input type="checkbox" id="pj-show-pf-cats" onchange="onTogglePFCats()" style="width:16px;height:16px;accent-color:var(--accent)">
+              <span>Habilitar Categorias Básicas</span>
+            </label>
+          </div>
+          <div class="row hide-if-closed" id="btn-nova-cat-wrapper" style="margin-bottom:16px">
+            <button class="btn btn-primary" onclick="novaCategoria()">＋ Nova Categoria Básica</button>
+          </div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-header"><h3>🏷️ Categorias Básicas</h3></div>
+            <div class="card-body" id="cat-lista"></div>
+          </div>
+        </div>
+        <!-- Seção: Plano de Contas PJ -->
+        <div id="pj-plano-section">
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header" style="background:linear-gradient(135deg,rgba(124,106,247,0.15),rgba(34,211,161,0.1))">
+              <h3>🗂️ Plano de Contas Financeiro</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <select id="pj-plano-modelo" onchange="onPlanoContasModeloChange(this.value)" style="font-size:0.75rem;padding:6px 8px">
+                  <option value="escola">🏫 Modelo: Escola</option>
+                  <option value="generico">🏢 Modelo: Genérico</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="novaCategoriaPJ()" style="font-size:0.75rem">＋ Nova Conta Financeira</button>
+                <button class="btn btn-outline btn-sm" onclick="abrirGerirSubgrupos()" style="font-size:0.75rem">✏️ Subgrupos</button>
+                <button class="btn btn-outline btn-sm" onclick="limparPlanoContasPJ()" style="font-size:0.75rem">🧹 Limpar Plano de Contas</button>
+                <button class="btn btn-outline btn-sm" onclick="adicionarCatsPJ()" style="font-size:0.75rem">🔄 Resetar Padrão PJ</button>
+              </div>
+            </div>
+            <div class="card-body" id="pj-cat-lista"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Aba: Projetos + Indicadores + Imobilizados ── -->
+      <div id="tab-ajustes-projetos" class="tab-content">
+
+        <!-- Toggle Projetos (principal, habilita as demais funções) -->
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-body" style="padding:16px">
+            <label class="checkbox-wrapper" style="font-size:0.9rem;font-weight:600">
+              <input type="checkbox" id="pj-modulo-projetos" onchange="toggleModuloProjetos(this.checked)">
+              <span>📁 Habilitar Gestão de Projetos</span>
+            </label>
+            <div style="font-size:0.8rem;color:var(--text3);margin-top:6px;line-height:1.5">
+              Gestão da sua Empresa. (principal, habilita as demais funções)
+            </div>
+          </div>
+        </div>
+
+        <!-- Toggle Gestão de Processos (subordinado ao toggle de Projetos) -->
+        <div id="card-processos-dentro-projetos" style="display:none">
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-body" style="padding:16px">
+              <label class="checkbox-wrapper" style="font-size:0.9rem;font-weight:600">
+                <input type="checkbox" id="pj-gestao-processos-ajustes" onchange="toggleProcessosAjustes(this.checked)">
+                <span>📚 Habilitar Gestão de Processos (POPs e Manuais)</span>
+              </label>
+              <div style="font-size:0.8rem;color:var(--text3);margin-top:6px;line-height:1.5">
+                Repositório central de POPs, Manuais Operacionais e Protocolos Técnicos.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toggle Indicadores (subordinado ao toggle de Projetos) -->
+        <div id="card-indicadores-dentro-projetos" style="display:none">
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-body" style="padding:16px">
+              <label class="checkbox-wrapper" style="font-size:0.9rem;font-weight:600">
+                <input type="checkbox" id="pj-gestao-indicadores-ajustes" onchange="toggleIndicadoresAjustes(this.checked)">
+                <span>📈 Habilitar Gestão de Indicadores</span>
+              </label>
+              <div style="font-size:0.8rem;color:var(--text3);margin-top:6px;line-height:1.5">
+                Controlar Métricas Operacionais e Análise de BI.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toggle Gestão de Contratos (subordinado ao toggle de Projetos) -->
+        <div id="card-contratos-dentro-projetos" style="display:none">
+          <div class="card" style="margin-bottom:12px;border-left:3px solid #f5c542">
+            <div class="card-body" style="padding:16px">
+              <label class="checkbox-wrapper" style="font-size:0.9rem;font-weight:600">
+                <input type="checkbox" id="pj-gestao-contratos-ajustes" onchange="toggleContratosAjustes(this.checked)">
+                <span>📄 Habilitar Gestão de Contratos</span>
+              </label>
+              <div style="font-size:0.8rem;color:var(--text3);margin-top:6px;line-height:1.5">
+                Consolidar todas as Despesas Fixas e Contrato Vinculados (vigência, índice de reajuste, referência).
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toggle Imobilizados / Patrimônio -->
+        <div id="patrimonio-ajustes-section" class="card" style="margin-bottom:12px">
+          <div class="card-body" style="padding:16px">
+            <label class="checkbox-wrapper" style="font-size:0.9rem;font-weight:600">
+              <input type="checkbox" id="pj-gestao-patrimonio-ajustes" onchange="togglePatrimonioTab(this.checked);syncPatrimonioCheckboxes(this.checked)">
+              <span>🏢 Habilitar Módulo Gestão de Imobilizados</span>
+            </label>
+            <div style="font-size:0.8rem;color:var(--text3);margin-top:6px;line-height:1.5">
+              Controlar ativos fixos (Móveis, TI, Equipamentos, Veículos) e depreciação.
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:0.8rem;color:var(--text3);text-align:center;padding:8px 0 4px">
+          Em caso de dúvidas, <span style="color:var(--accent);cursor:pointer;font-weight:600" onclick="abrirManual()">acesse o manual do sistema</span>.
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- PÁGINA: GESTÃO DE PROJETOS E OBRIGAÇÕES       -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="page-obrigacoes" class="page">
+
+      <div class="tabs" id="tabs-obrigacoes" style="border-bottom:1px solid var(--border);margin-bottom:16px">
+        <button class="tab-btn active" onclick="showTab('obrigacoes','tab-cadastro-obrigacoes',this);renderListaObrigacoes();renderPlanoIndicadores();renderRegistrosIndicadores()"><span class="tab-icon">📝</span><span class="tab-label">Gestão de Projetos</span></button>
+        <button class="tab-btn" id="tab-btn-processos" onclick="showTab('obrigacoes','tab-processos',this);renderListaProcessos();renderAgendaObrigacoes()" style="display:none"><span class="tab-icon">📚</span><span class="tab-label">Gestão de Processos</span></button>
+        <button class="tab-btn" id="tab-btn-contratos" onclick="showTab('obrigacoes','tab-contratos',this);renderGestaoContratos()" style="display:none"><span class="tab-icon">📄</span><span class="tab-label">Gestão de Contratos</span></button>
+        <button class="tab-btn" id="tab-btn-patrimonio" onclick="showTab('obrigacoes','tab-patrimonio',this);renderPatrimonio()" style="display:none"><span class="tab-icon">🏢</span><span class="tab-label">Patrimônio</span></button>
+      </div>
+
+      <!-- Toolbar de Relatórios de Projetos -->
+      <div class="reports-toolbar">
+            <div class="btn-group" style="display:flex;gap:0">
+              <button id="btn-relat-proj-exec" class="btn btn-primary" onclick="gerarRelatorioExecutivoProjetosPDF()" style="background:linear-gradient(135deg,#7c6af7,#4fa8f5);border-radius:12px 0 0 12px" title="Relatório Executivo de Projetos">📊 Relatório Executivo</button>
+              <button id="btn-relat-proj-exec-2" class="btn btn-primary" onclick="gerarRelatorioExecutivoProjetos2PDF()" style="background:#22d3a1;color:#111;border-radius:0 12px 12px 0;border-left:1px solid rgba(0,0,0,0.15);padding-left:10px;padding-right:10px;font-weight:800" title="Relatório Executivo 2.0 (Dashboard BI)">2.0</button>
+            </div>
+            <div style="display:flex;gap:0">
+              <button id="btn-gerencial-proj-toolbar" class="btn btn-outline" onclick="abrirPainelGerencialProjetos()" title="Painel Gerencial de Projetos" style="font-weight:700;gap:6px;border-radius:12px">🔍 Gerencial</button>
+            </div>
+
+            <!-- Botão único de Exportação com dropdown -->
+            <div class="export-dropdown-wrap" id="export-dropdown-wrap-proj">
+              <button class="btn btn-outline" onclick="toggleExportDropdownProj()" id="btn-exportar-toggle-proj" style="gap:8px;font-weight:700">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="export-dropdown-menu" id="export-dropdown-menu-proj">
+                <div class="edi-row">
+                  <span class="edi-row-icon">📅</span>
+                  <span class="edi-row-name" onclick="closeExportDropdownProj();gerarRelatorioMatrizPDF()">Matriz de Acompanhamento</span>
+                  <div class="edi-row-badges">
+                    <button class="edi-badge pdf" onclick="closeExportDropdownProj();gerarRelatorioMatrizPDF()">PDF</button>
+                    <button class="edi-badge xls" onclick="closeExportDropdownProj();exportarMatrizObrigacoesCSV()">CSV</button>
+                  </div>
+                </div>
+                <div class="edi-row">
+                  <span class="edi-row-icon">📚</span>
+                  <span class="edi-row-name" onclick="closeExportDropdownProj();gerarRelatorioProcessosPDF()">Gestão de Processos</span>
+                  <div class="edi-row-badges">
+                    <button class="edi-badge pdf" onclick="closeExportDropdownProj();gerarRelatorioProcessosPDF()">PDF</button>
+                    <button class="edi-badge xls" onclick="closeExportDropdownProj();gerarRelatorioProcessosCSV()">CSV</button>
+                  </div>
+                </div>
+                <div class="edi-row">
+                  <span class="edi-row-icon">📈</span>
+                  <span class="edi-row-name" onclick="closeExportDropdownProj();gerarRelatorioIndicadoresPDF()">Indicadores</span>
+                  <div class="edi-row-badges">
+                    <button class="edi-badge pdf" onclick="closeExportDropdownProj();gerarRelatorioIndicadoresPDF()">PDF</button>
+                    <button class="edi-badge xls" onclick="closeExportDropdownProj();gerarRelatorioIndicadoresCSV()">CSV</button>
+                  </div>
+                </div>
+                <div class="edi-row">
+                  <span class="edi-row-icon">📄</span>
+                  <span class="edi-row-name" onclick="closeExportDropdownProj();gerarRelatorioContratosPDF()">Gestão de Contratos</span>
+                  <div class="edi-row-badges">
+                    <button class="edi-badge pdf" onclick="closeExportDropdownProj();gerarRelatorioContratosPDF()">PDF</button>
+                    <button class="edi-badge xls" onclick="closeExportDropdownProj();gerarRelatorioContratosCSV()">CSV</button>
+                  </div>
+                </div>
+                <div class="edi-row">
+                  <span class="edi-row-icon">🏢</span>
+                  <span class="edi-row-name" onclick="closeExportDropdownProj();gerarRelatorioPatrimonioPDF()">Patrimônio</span>
+                  <div class="edi-row-badges">
+                    <button class="edi-badge pdf" onclick="closeExportDropdownProj();gerarRelatorioPatrimonioPDF()">PDF</button>
+                    <button class="edi-badge xls" onclick="closeExportDropdownProj();gerarRelatorioPatrimonioCSV()">CSV</button>
+                  </div>
+                </div>
+                <div class="edi-row">
+                  <span class="edi-row-icon">🔍</span>
+                  <span class="edi-row-name" onclick="closeExportDropdownProj();abrirPainelGerencialProjetos()">Painel Gerencial</span>
+                  <div class="edi-row-badges">
+                    <button class="edi-badge pdf" onclick="closeExportDropdownProj();exportarGerencialProjetosPDF()">PDF</button>
+                    <button class="edi-badge" style="background:linear-gradient(135deg,#7c6af7,#4fa8f5);color:#fff" onclick="closeExportDropdownProj();abrirPainelGerencialProjetos()">VER</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+      </div>
+
+      <!-- ABA 1: Matriz de 12 Meses -->
+      <!-- ABA 1: Gestão de Projetos -->
+      <div id="tab-cadastro-obrigacoes" class="tab-content active">
+        <div cla          </div>
+          <div class="card-body" id="lista-obrigacoes-base"></div>
+        </div>
+
+        <div id="indicadores-em-projetos-section" style="display:none">
+          <!-- Plano de Indicadores (cadastro de métricas) -->
+          <div class="card" id="card-ajustes-indicadores" style="margin-top:16px;margin-bottom:16px">
+            <div class="card-header" style="background:linear-gradient(135deg,rgba(34,211,161,0.15),rgba(79,168,245,0.1))">
+              <h3>📈 Plano de Indicadores</h3>
+              <button class="btn btn-outline btn-sm" onclick="novoPlanoIndicador()" style="font-size:0.75rem">＋ Novo Indicador</button>
+            </div>
+            <div class="card-body" style="padding:16px 18px 8px">
+              <p style="font-size:0.8rem;color:var(--text3);margin-bottom:4px">Cadastre as métricas que deseja monitorar (ex: Alunos Ativos, Quadro de Pessoal, Consultas Realizadas).</p>
+            </div>
+            <div class="card-body" id="lista-plano-indicadores"></div>
+          </div>
+          <div class="row hide-if-closed" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+            <button class="btn btn-primary" onclick="abrirModalIndicador()">+ Registrar Dado</button>
+            <button class="btn btn-outline btn-sm" onclick="exportarIndicadoresCSV()" title="Exportar CSV">📥 CSV</button>
+            <button class="btn btn-outline btn-sm" onclick="exportarIndicadoresPDF()" title="Exportar PDF" style="color:var(--red)">📄 PDF</button>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Registos de Indicadores</h3>
+              <div class="filters-wrap">
+                <select id="filtro-indicador-tipo" onchange="renderRegistrosIndicadores()" class="filter-sel">
+                  <option value="">Todos os indicadores</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body" id="lista-registros-indicadores"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 2: Gestão de Processos (inclui Matriz de Acompanhamento) -->
+    <div id="tab-processos" class="tab-content">
+      <!-- Matriz de Acompanhamento (movida para cá) -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header" style="background:linear-gradient(135deg,rgba(124,106,247,0.15),rgba(34,211,161,0.1))">
+          <h3>📅 Matriz de Acompanhamento</h3>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="obrigacoes-ano" onchange="renderAgendaObrigacoes()" class="filter-sel" style="font-weight:700"></select>
+            <button class="btn btn-outline btn-sm" onclick="exportarMatrizObrigacoesCSV()">📥 CSV (Matriz Anual)</button>
+            <button class="btn btn-outline btn-sm" onclick="exportarAuditoriaResponsavelCSV()">📥 CSV (Por Responsável)</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:16px;overflow-x:auto;">
+          <div id="grade-agenda-obrigacoes"></div>
+        </div>
+      </div>
+      <!-- Banco de Processos e POPs -->
+      <div class="row hide-if-closed" style="margin-bottom:16px;">
+        <button class="btn btn-primary" onclick="abrirModalProcesso()">＋ Novo Documento (POP/Manual)</button>
+      </div>
+      <div class="card">
+        <div class="card-header" style="background:linear-gradient(135deg,rgba(34,211,161,0.15),rgba(79,168,245,0.1))">
+          <div>
+            <h3 style="margin:0; font-size:1.1rem; color:var(--text)">📚 Banco de Processos e POPs</h3>
+            <span style="font-size:0.75rem; color:var(--text3)">Repositório central de Manuais, Procedimentos Operacionais Padrão e Protocolos Técnicos.</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="filtro-processo-tipo" onchange="renderListaProcessos()" class="filter-sel" style="font-size:0.75rem;padding:6px;border-radius:4px;border:1px solid var(--border)">
+                <option value="Todos">Todos os Tipos</option>
+                <option value="POP">POP (Procedimento Padrão)</option>
+                <option value="Manual">Manual Operacional</option>
+                <option value="Protocolo">Protocolo Técnico</option>
+                <option value="Fluxograma">Fluxograma</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="exportarProcessosCSV()">📥 Exportar CSV</button>
+          </div>
+        </div>
+        <div class="card-body" id="lista-processos-base" style="padding:16px; overflow-x:auto;">
+           </div>
+      </div>
+    </div>
+
+      <!-- ===== TAB INDICADORES (Projetos) ===== -->
+
+      <!-- ===== TAB PATRIMÔNIO (Projetos) ===== -->
+      <div id="tab-patrimonio" class="tab-content">
+        <div class="card">
+          <div class="card-header" style="background:linear-gradient(135deg,rgba(124,106,247,0.15),rgba(34,211,161,0.1));flex-wrap:wrap;gap:8px">
+            <h3>&#127970; Patrimônio / Imobilizados</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <button class="btn btn-outline" style="font-size:0.82rem" onclick="filtrarImobilizados('ativo')" id="btn-pat-ativo">&#9989; Ativos</button>
+              <button class="btn btn-outline" style="font-size:0.82rem" onclick="filtrarImobilizados('todos')" id="btn-pat-todos">Todos</button>
+              <button class="btn btn-primary btn-sm hide-if-closed" onclick="novoImobilizado()">+ Novo Bem Ativo</button>
+              <button class="btn btn-outline btn-sm" onclick="exportarPatrimonioCSV()" title="Exportar CSV">&#128229; CSV</button>
+              <button class="btn btn-outline btn-sm" onclick="exportarPatrimoniosPDF()" title="Exportar PDF" style="color:var(--red)">&#128196; PDF</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:16px">
+            <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
+              <div class="kpi-card" style="--kpi-color:var(--blue)">
+                <div class="kpi-label">Valor de Aquisição Total</div>
+                <div class="kpi-value amount-positive" id="pat-aquisicao-tot">R$ 0,00</div>
+              </div>
+              <div class="kpi-card" style="--kpi-color:var(--red)">
+                <div class="kpi-label">Depreciação Acumulada</div>
+                <div class="kpi-value amount-negative" id="pat-depreciacao-tot">- R$ 0,00</div>
+              </div>
+              <div class="kpi-card" style="--kpi-color:var(--accent)">
+                <div class="kpi-label">Valor Contábil Atual</div>
+                <div class="kpi-value" id="pat-contabil-tot">R$ 0,00</div>
+              </div>
+            </div>
+            <div style="position:relative;margin-bottom:12px">
+              <input type="text" id="pat-busca" placeholder="&#128269; Buscar por nome, grupo ou N&#186; patrimônio..." oninput="renderPatrimonio()" style="width:100%;padding-right:36px;box-sizing:border-box">
+              <button onclick="document.getElementById('pat-busca').value='';renderPatrimonio()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:1rem;line-height:1" title="Limpar">&#10005;</button>
+            </div>
+            <div id="patrimonio-lista"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA: Gestão de Contratos -->
+      <div id="tab-contratos" class="tab-content">
+        <div class="card">
+          <div class="card-header" style="background:linear-gradient(135deg,rgba(245,197,66,0.15),rgba(124,106,247,0.1));flex-wrap:wrap;gap:8px">
+            <h3>📄 Gestão de Contratos</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <button class="btn btn-primary btn-sm" onclick="novoContratoDeMovimentacoes()" title="Cria uma Despesa Fixa em Finanças já com os dados de Contrato">＋ Novo Contrato</button>
+              <button class="btn btn-outline btn-sm" onclick="renderGestaoContratos()" title="Atualizar">🔄</button>
+              <button class="btn btn-outline btn-sm" id="btn-contratos-todos" onclick="filtrarContratos('todos')" style="border-color:var(--accent);color:var(--accent)">Todos</button>
+              <button class="btn btn-outline btn-sm" id="btn-contratos-vigentes" onclick="filtrarContratos('vigentes')">✅ Vigentes</button>
+              <button class="btn btn-outline btn-sm" id="btn-contratos-vencendo" onclick="filtrarContratos('vencendo')">⚠️ Vencendo</button>
+              <button class="btn btn-outline btn-sm" id="btn-contratos-vencidos" onclick="filtrarContratos('vencidos')">🔴 Vencidos</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:16px">
+            <div style="font-size:0.82rem;color:var(--text3);margin-bottom:14px;line-height:1.5">
+              Contratos vinculados a <b>Despesas Fixas</b>. Use o botão <b>＋ Novo Contrato</b> acima para cadastrar um diretamente, ou acesse <b>Finanças → Fixas</b>, edite uma despesa fixa e marque <em>"Vincular dados de Contrato a esta conta"</em>.
+            </div>
+
+            <!-- KPIs rápidos -->
+            <div id="contratos-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px"></div>
+
+            <!-- Busca e filtros -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+              <div style="position:relative;flex:1;min-width:220px">
+                <input type="text" id="contratos-busca" placeholder="🔍 Buscar por nome, referência ou responsável..." oninput="renderGestaoContratos()" style="width:100%;padding-right:36px;box-sizing:border-box">
+                <button onclick="document.getElementById('contratos-busca').value='';renderGestaoContratos()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:1rem;line-height:1" title="Limpar">✕</button>
+              </div>
+              <select id="contratos-filtro-favorecido" class="filter-sel" onchange="renderGestaoContratos()" style="min-width:180px">
+                <option value="">🏢 Todos os Favorecidos</option>
+              </select>
+              <select id="contratos-filtro-indice" class="filter-sel" onchange="renderGestaoContratos()" style="min-width:160px">
+                <option value="">📊 Todos os Índices</option>
+                <option value="nenhum">Sem reajuste</option>
+                <option value="ipca">IPCA</option>
+                <option value="igpm">IGP-M</option>
+                <option value="incc">INCC</option>
+                <option value="cdi">CDI</option>
+                <option value="selic">Selic</option>
+                <option value="fixo">Taxa Fixa</option>
+              </select>
+            </div>
+
+            <div id="contratos-lista"></div>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+
+  </main>
+</div>
+
+
+<div class="modal-overlay" id="modal-imobilizado">
+  <div class="modal" style="max-width:520px">
+    <h2 id="modal-imobilizado-title">Novo Bem (Imobilizado)</h2>
+    <div class="form-grid-2">
+      <div class="form-group"><label>ID do Patrimônio</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="imo-codigo" placeholder="Ex: PAT-001" style="flex:1">
+          <button class="btn btn-outline btn-sm" onclick="gerarCodigoPatrimonio()" title="Gerar ID automático" style="white-space:nowrap;padding:0 10px">🔀 Gerar</button>
+        </div>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="imo-status">
+          <option value="ativo">✅ Ativo</option>
+          <option value="baixado">🗑️ Baixado / Vendido</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1"><label>Nome / Descrição</label><input type="text" id="imo-nome" placeholder="Ex: Maca Clínica, Notebook Dell, Ar Condicionado..."></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Grupo de Ativo</label>
+        <select id="imo-grupo" onchange="sugerirDepreciacao(this.value)">
+          <option value="Móveis e Utensílios">🛋️ Móveis e Utensílios</option>
+          <option value="Máquinas e Equipamentos">⚙️ Máquinas e Equipamentos</option>
+          <option value="Equipamentos de TI">💻 Equipamentos de Informática / TI</option>
+          <option value="Veículos">🚗 Veículos</option>
+          <option value="Edificações">🏢 Imóveis / Edificações</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Valor de Aquisição (R$)</label><input type="text" inputmode="decimal" id="imo-valor" oninput="formatCurrencyInput(this)" placeholder="Ex: 3.500,00"></div>
+      <div class="form-group"><label>Data da Compra</label><input type="date" id="imo-data"></div>
+      <div class="form-group">
+        <label>Taxa Depreciação (% a.a.) <span id="imo-taxa-hint" style="color:var(--text3);font-weight:400;font-size:0.8rem"></span></label>
+        <input type="number" id="imo-taxa" step="0.1" value="10" min="0" max="100">
+      </div>
+      <div class="form-group"><label>Localização <span style="color:var(--text3);font-weight:400">(opcional)</span></label><input type="text" id="imo-local" placeholder="Ex: Sala 2, Recepção, Filial SP..."></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Observações <span style="color:var(--text3);font-weight:400">(opcional)</span></label><input type="text" id="imo-obs" placeholder="Número de série, fornecedor..."></div>
+    </div>
+    <div id="imo-preview" style="background:var(--surface2);padding:12px;border-radius:var(--radius-sm);margin-top:8px;font-size:0.82rem;color:var(--text2);display:none"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-imobilizado')">Cancelar</button>
+      <button class="btn btn-outline" id="btn-imprimir-etiqueta" onclick="imprimirEtiquetaPatrimonio()" style="display:none">🏷️ Imprimir Etiqueta</button>
+      <button class="btn btn-primary" onclick="salvarImobilizado()">Salvar Ativo</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-manual">
+  <div class="modal" style="text-align: center;">
+    <div id="tut-step-1" class="tut-step"><h2>👋 Bem-vindo ao MiContas!</h2><p>Vamos fazer um tour rápido para você aprender a controlar a vida financeira da sua família de forma simples e inteligente.</p><div style="font-size: 4rem; margin: 20px 0;">📱</div></div>
+    <div id="tut-step-2" class="tut-step"><h2>🏠 Tela Início</h2><p>A tela <b>Início</b> é o seu painel geral. Veja os KPIs de receitas, despesas, saldo do mês e indicadores de pendências. Use os filtros para ver gráficos segmentados.</p><div style="font-size: 4rem; margin: 20px 0;">📊</div></div>
+    <div id="tut-step-3" class="tut-step"><h2>📋 Finanças e Pendências</h2><p>Em <b>Finanças ▸ Lançamentos</b>, registe despesas e receitas. Use o <b>Status</b> para marcar como <b>Efetivado</b> ou <b>Pendente</b>. A aba <b>Planejamento</b> permite comparar previsto × realizado por categoria.</p><div style="font-size: 4rem; margin: 20px 0;">⏳</div></div>
+    <div id="tut-step-4" class="tut-step"><h2>📌 Contas Fixas</h2><p>Cadastre despesas e receitas fixas. Use "📥 Importar Fixas p/ Mês" para as puxar automaticamente para o mês ou fatura de cartão.</p><div style="font-size: 4rem; margin: 20px 0;">💡</div></div>
+    <div id="tut-step-5" class="tut-step"><h2>💳 Cartões de Crédito</h2><p>Cadastre os seus cartões. Compras parceladas repetem automaticamente nas faturas seguintes. Com o módulo <b>Projetos</b> ativo, os Cartões ficam como aba dentro de Finanças.</p><div style="font-size: 4rem; margin: 20px 0;">💳</div></div>
+    <div id="tut-step-6" class="tut-step"><h2>🏦 Contas Bancárias</h2><p>Habilite em <b>Usuário ▸ Habilitar Contas Correntes</b> para controlar saldo e extrato por conta em <b>Finanças ▸ Contas</b>. O saldo inicial é registrado automaticamente ao criar a conta.</p><div style="font-size: 4rem; margin: 20px 0;">🏦</div></div>
+    <div id="tut-step-7" class="tut-step"><h2>👤 Usuários e Visibilidade</h2><p>Configure cada usuário para ver apenas os gastos que lhe pertencem. Divida contas facilmente na hora de lançar! Plano <b>Empresa</b> desbloqueia módulos PJ como Indicadores, Patrimônio e Projetos.</p><div style="font-size: 4rem; margin: 20px 0;">🤝</div></div>
+    <div id="tut-step-8" class="tut-step"><h2>🔒 Fechar Mês e Backup</h2><p>Clique no <b>cadeado 🔒</b> no topo para fechar o mês e blindar todos os dados. Em <b>Usuário ▸ Backup</b>, exporte e restaure seus dados a qualquer momento.</p><div style="font-size: 4rem; margin: 20px 0;">🔒</div></div>
+    <div id="tut-step-9" class="tut-step"><h2>📚 Manual do Sistema</h2><p>Em caso de dúvidas, envie um e-mail para <b>danilomgarcia@outlook.com</b>. Leia o guia rápido configurado para o seu perfil:</p><div style="font-size: 4rem; margin: 20px 0;">📖</div>
+      <div style="display:flex; flex-direction:column; gap:10px; max-width:320px; margin:0 auto;">
+        <button class="btn btn-primary" id="btn-tut-pessoal" onclick="abrirSubManual('pessoal')" style="padding:14px;font-size:1.05rem;">📘 Ler Manual de Uso Pessoal</button>
+        <button class="btn btn-primary" id="btn-tut-empresa" onclick="abrirSubManual('empresa')" style="padding:14px;font-size:1.05rem;display:none;">🏢 Ler Manual Conta Empresa</button>
+      </div>
+    </div>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:8px">
+      <input type="checkbox" id="tut-nao-exibir" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer"><label for="tut-nao-exibir" style="font-size:0.82rem;color:var(--text3);cursor:pointer;user-select:none">Não exibir novamente</label>
+    </div>
+    <div class="modal-footer" style="justify-content: space-between; margin-top: 16px;"><button class="btn btn-outline" onclick="fecharTutorial()">Pular</button><button class="btn btn-primary" id="tut-btn-next" onclick="nextTutorial()">Próximo ➔</button></div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-submanual">
+  <div class="modal">
+    <h2 id="submanual-title">📘 Manual</h2>
+    <div id="submanual-body" style="font-size:0.9rem;color:var(--text2);line-height:1.7;text-align:left"></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-submanual')">Fechar</button><button class="btn btn-primary" onclick="closeModal('modal-submanual');tutStep=9;updateTutUI();openModal('modal-manual')">↩ Voltar ao Tour</button></div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-alerta-senha">
+  <div class="modal" style="max-width:450px; text-align:center;">
+    <div style="font-size: 3rem; margin-bottom: 10px;">⚠️</div>
+    <h2>Aviso de Segurança</h2>
+    <p style="font-size:0.9rem; color:var(--text2); line-height:1.5; margin-bottom:20px;">
+      Notámos que a sua senha atual não está encriptada na base de dados. Recomendamos que atualize a sua senha no perfil para aplicar a nova criptografia de segurança (SHA-256) integrada ao Firebase Auth.
+    </p>
+    <button class="btn btn-primary" style="width:100%; margin-bottom:10px;" onclick="dispensarAlertaSenha(true)">Ir para o Perfil e Atualizar</button>
+    <button class="btn btn-outline" style="width:100%;" onclick="dispensarAlertaSenha(false)">Lembrar mais tarde</button>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-lancamento">
+  <div class="modal">
+    <h2 id="modal-lancamento-title">Novo Lançamento</h2>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Tipo</label><select id="lanc-tipo" onchange="handleLancTipoChange(this.value)"><option value="despesa">Despesa</option><option value="receita">Receita</option></select></div>
+      <div class="form-group"><label>Data</label><input type="date" id="lanc-data"></div>
+      <div class="form-group"><label>Valor (R$)</label><input type="text" inputmode="decimal" id="lanc-valor" placeholder="Ex: 150,00" oninput="formatCurrencyInput(this);updateSplitVals('lanc-splits', 'lanc-valor')"></div>
+      <div class="form-group"><label>Categoria</label><select id="lanc-cat"></select></div>
+      <div class="form-group"><label>Forma de Pagamento</label>
+        <select id="lanc-conta">
+              <option value="Conta Corrente">🏦 Conta Corrente</option><option value="Poupança">🏦 Poupança</option>
+              <option value="PIX">⚡ PIX</option><option value="Dinheiro">💵 Dinheiro</option><option value="Débito">💳 Débito</option>
+              <option value="Débito Automático">💳 Débito Automático</option>
+              <option value="Cartão de Crédito">💳 Cartão Crédito</option><option value="Transferência">🔄 Transferência</option>
+              <option value="Boleto">📄 Boleto</option><option value="Crédito Loja">🏪 Crédito Loja</option>
+              <option value="Terceiros">🤝 Terceiros</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Status</label><select id="lanc-status" style="font-weight: 600;"><option value="pago">Efetivado (Paguei/Recebi)</option><option value="pendente">Pendente (A Pagar/Receber)</option></select></div>
+      <div class="form-group" id="lanc-conta-bancaria-group" style="display:none;grid-column: 1 / -1">
+        <label>🏦 Conta Bancária <span style="color:var(--text3);font-weight:400">(crédito/débito)</span></label>
+        <select id="lanc-conta-bancaria">
+          <option value="">— Nenhuma —</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column: 1 / -1"><label>Favorecido / Local (Opcional)</label><input type="text" id="lanc-fav" list="favorecidos-list" placeholder="Ex: Supermercado Extra, João..."></div>
+      <div class="form-group" style="grid-column: 1 / -1"><label>Detalhes (Descrição)</label><input type="text" id="lanc-desc" placeholder="Ex: Compras da semana..."></div>
+      <div class="form-group" style="grid-column: 1 / -1;" id="lanc-dividir-container">
+        <label class="checkbox-wrapper"><input type="checkbox" id="lanc-dividir-check" onchange="toggleSplitArea('lanc-splits', this.checked, 'lanc-valor')"><span>Dividir com outros usuários?</span></label>
+      </div>
+      <div id="lanc-splits" style="display:none; grid-column: 1 / -1; background:var(--surface2); padding:16px; border-radius:var(--radius-sm);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-lancamento')">Cancelar</button>
+      <button class="btn btn-whatsapp btn-whatsapp-icon" onclick="compartilharLancamentoWhatsApp()" title="Compartilhar no WhatsApp para solicitar autorização">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </button>
+      <button class="btn btn-primary" onclick="salvarLancamento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-fixa">
+  <div class="modal">
+    <h2 id="modal-fixa-title">Conta Fixa</h2>
+    <div class="form-grid-2">
+      <div class="form-group" style="grid-column: 1 / -1"><label>Favorecido / Local (Opcional)</label><input type="text" id="fixa-fav" list="favorecidos-list" placeholder="Ex: Netflix, EDP, Imobiliária..."></div>
+      <div class="form-group" style="grid-column: 1 / -1"><label>Detalhes (Nome da Conta)</label><input type="text" id="fixa-nome" placeholder="Ex: Assinatura, Conta de Luz..."></div>
+      <div class="form-group"><label>Tipo</label><select id="fixa-tipo" onchange="handleFixaTipoChange(this.value)"><option value="despesa">Despesa</option><option value="receita">Receita</option></select></div>
+      <div class="form-group"><label>Status</label><select id="fixa-status"><option>Ativa</option><option>Suspensa</option></select></div>
+      <div class="form-group"><label>Valor Padrão (R$)</label><input type="text" inputmode="decimal" id="fixa-valor" placeholder="Ex: 200,00" oninput="formatCurrencyInput(this);updateSplitVals('fixa-splits','fixa-valor')"></div>
+      <div class="form-group"><label>Dia Vencimento</label><input type="number" id="fixa-dia" min="1" max="31"></div>
+      <div class="form-group"><label>Categoria</label><select id="fixa-cat"></select></div>
+      <div class="form-group"><label>Pagamento</label>
+        <select id="fixa-conta" onchange="document.getElementById('fixa-cc-group').style.display = this.value === 'Cartão de Crédito' ? 'flex' : 'none'">
+            <option value="Conta Corrente">🏦 Conta Corrente</option>
+            <option value="Poupança">🏦 Poupança</option>
+            <option value="PIX">⚡ PIX</option>
+            <option value="Dinheiro">💵 Dinheiro</option>
+            <option value="Débito">💳 Débito</option>
+            <option value="Débito Automático">💳 Débito Automático</option>
+            <option value="Boleto">📄 Boleto</option>
+            <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+            <option value="Transferência">🔄 Transferência</option>
+            <option value="Crédito Loja">🏪 Crédito Loja</option>
+            <option value="Terceiros">🤝 Terceiros</option>
+        </select>
+      </div>
+      <div class="form-group" id="fixa-cc-group" style="display:none; grid-column: 1 / -1;"><label>Qual Cartão?</label><select id="fixa-cartao-id"></select></div>
+      <div class="form-group" id="fixa-conta-bancaria-group" style="display:none; grid-column: 1 / -1;">
+        <label>🏦 Conta Bancária <span style="color:var(--text3);font-weight:400">(débito/crédito)</span></label>
+        <select id="fixa-conta-bancaria"><option value="">— Nenhuma —</option></select>
+      </div>
+    </div>
+    <!-- Dados de Contrato (apenas Empresa/PJ) -->
+    <div id="fixa-contrato-toggle-row" class="form-group" style="grid-column:1/-1;margin-top:10px;border-top:1px solid var(--border);padding-top:14px;display:none">
+      <label class="checkbox-wrapper">
+        <input type="checkbox" id="fixa-is-contrato" onchange="document.getElementById('fixa-contrato-fields').style.display=this.checked?'grid':'none'">
+        <span>📄 Vincular dados de Contrato a esta conta?</span>
+      </label>
+    </div>
+    <div id="fixa-contrato-fields" class="form-grid-2" style="display:none;grid-column:1/-1;background:var(--surface2);padding:16px;border-radius:var(--radius-sm);margin-bottom:12px;gap:12px">
+      <div class="form-group"><label>Data Início (Vigência)</label><input type="date" id="fixa-contrato-inicio"></div>
+      <div class="form-group"><label>Data Término (Vigência)</label><input type="date" id="fixa-contrato-fim"></div>
+      <div class="form-group"><label>Índice de Reajuste</label>
+        <select id="fixa-contrato-indice">
+          <option value="">Sem reajuste automático</option>
+          <option value="IGPM">IGP-M</option>
+          <option value="IPCA">IPCA</option>
+          <option value="INCC">INCC</option>
+          <option value="Salario Minimo">Salário Mínimo</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Mês Base (Reajuste)</label>
+        <select id="fixa-contrato-mes">
+          <option value="">Selecione...</option>
+          <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
+          <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+          <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+          <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Número / Referência do Contrato <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
+        <input type="text" id="fixa-contrato-ref" placeholder="Ex: CTR-2024/001, Apólice 12345...">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Observações do Contrato <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
+        <input type="text" id="fixa-contrato-obs" placeholder="Ex: Renovação automática, cláusulas especiais...">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px" id="fixa-dividir-container">
+      <label class="checkbox-wrapper">
+        <input type="checkbox" id="fixa-dividir-check" onchange="toggleSplitArea('fixa-splits',this.checked,'fixa-valor')">
+        <span>Dividir com a família?</span>
+      </label>
+    </div>
+
+    <div id="fixa-splits" style="display:none;background:var(--surface2);padding:16px;border-radius:var(--radius-sm);margin-bottom:12px"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-fixa')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarFixa()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-cartao">
+  <div class="modal">
+    <h2 id="modal-cartao-title">Gerir Cartão</h2>
+    <div class="form-grid-2">
+      <div class="form-group" style="grid-column: 1 / -1"><label>Nome / Apelido</label><input type="text" id="cc-nome"></div>
+      <div class="form-group"><label>Bandeira</label><select id="cc-bandeira"><option>Visa</option><option>Mastercard</option><option>Elo</option><option>Amex</option></select></div>
+      <div class="form-group"><label>Limite (R$)</label><input type="text" inputmode="decimal" id="cc-limite" oninput="formatCurrencyInput(this)"></div>
+      <div class="form-group"><label>4 Últimos Dígitos</label><input type="text" id="cc-digitos" maxlength="4"></div>
+      <div class="form-group"><label>Fechamento</label><select id="cc-fechamento"></select></div>
+      <div class="form-group" style="grid-column: 1 / -1"><label>Vencimento</label><select id="cc-vencimento"></select></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-cartao')">Cancelar</button><button class="btn btn-primary" onclick="salvarCartao()">Salvar</button></div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-processo">
+  <div class="modal" style="width:760px">
+    <h2 id="modal-processo-title">Novo Documento (POP/Manual)</h2>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Tipo de Documento</label>
+        <select id="proc-tipo">
+          <option value="POP">📗 POP (Procedimento Operacional Padrão)</option>
+          <option value="Manual">📘 Manual Operacional</option>
+          <option value="Protocolo">📙 Protocolo Técnico</option>
+          <option value="Fluxograma">📊 Fluxograma</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Código do Documento</label><input type="text" id="proc-codigo" placeholder="Ex: POP-FAT-001"></div>
+      <div class="form-group" style="grid-column: 1 / -1"><label>Título</label><input type="text" id="proc-titulo" placeholder="Ex: Lançamento, Conferência e Faturamento de Guias de Convênios"></div>
+      <div class="form-group"><label>Setor / Área</label><input type="text" id="proc-area" placeholder="Ex: Administrativo / Faturamento"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="proc-status">
+          <option value="Ativo">🟢 Ativo</option>
+          <option value="Em Revisão">🟡 Em Revisão</option>
+          <option value="Obsoleto">⚪ Obsoleto</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Elaborado por</label><input type="text" id="proc-elaborado" placeholder="Nome / Cargo"></div>
+      <div class="form-group"><label>Aprovado por</label><input type="text" id="proc-aprovado" placeholder="Nome do Gestor / Diretor"></div>
+      <div class="form-group"><label>Data de Revisão</label><input type="date" id="proc-revisao"></div>
+      <div class="form-group"><label>Link do Arquivo <span style="color:var(--text3);font-weight:400">(Drive, Hostinger...)</span></label><input type="text" id="proc-link" placeholder="https://..."></div>
+      <div class="form-group" style="grid-column: 1 / -1">
+        <label style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+          <span>Conteúdo do Documento</span>
+          <button type="button" class="btn btn-outline btn-sm" onclick="inserirModeloProcesso()" style="font-size:0.72rem;padding:5px 9px">📋 Inserir Modelo Padrão</button>
+        </label>
+        <textarea id="proc-descricao" rows="14" style="font-family:monospace;font-size:0.8rem;line-height:1.5" placeholder="Objetivo, aplicação, responsáveis, materiais necessários, etapas do passo a passo, ações corretivas e contingências..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-processo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarProcesso()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-lancamento-cc">
+  <div class="modal">
+    <h2 id="title-modal-cc">Nova Compra CC</h2>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Cartão</label><select id="ccl-cartao" onchange="atualizarVencimentoFaturaCC()"></select></div>
+      <div class="form-group"><label>Tipo</label><select id="ccl-tipo" onchange="handleLancCCTipoChange(this.value)"><option value="compra">🛒 Compra</option><option value="estorno">🔄 Estorno / Crédito</option></select></div>
+      <div class="form-group"><label>Data da Compra</label><input type="date" id="ccl-data-compra" onchange="atualizarVencimentoFaturaCC()"></div>
+      <div class="form-group" id="ccl-data-group"><label>Data Venc. Fatura</label><input type="date" id="ccl-data"><div style="font-size:0.7rem;color:var(--text3);margin-top:3px">📌 Sugerida pelo fechamento do cartão — pode ser ajustada</div></div>
+      <div class="form-group"><label>Valor (R$)</label><input type="text" inputmode="decimal" id="ccl-valor" oninput="formatCurrencyInput(this);updateSplitVals('ccl-splits', 'ccl-valor')"></div>
+      <div class="form-group" id="ccl-parcelas-group"><label>Parcelas</label><select id="ccl-parcelas"><option value="1">1x (À Vista)</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option><option value="5">5x</option><option value="6">6x</option><option value="10">10x</option><option value="12">12x</option><option value="24">24x</option></select></div>
+      <div class="form-group" style="grid-column: 1 / -1"><label>Estabelecimento / Favorecido</label><input type="text" id="ccl-fav" list="favorecidos-list" placeholder="Ex: Mercado Livre, Amazon..."></div>
+      <div class="form-group" style="grid-column: 1 / -1"><label id="ccl-desc-label">Detalhes da Compra</label><input type="text" id="ccl-desc"></div>
+      <div class="form-group" style="grid-column: 1 / -1"><label>Categoria</label><select id="ccl-cat"></select></div>
+      <div class="form-group" style="grid-column: 1 / -1" id="ccl-dividir-container"><label class="checkbox-wrapper"><input type="checkbox" id="ccl-dividir-check" onchange="toggleSplitArea('ccl-splits', this.checked, 'ccl-valor')"><span>Dividir esta compra com a família?</span></label></div>
+      <div id="ccl-splits" style="display:none; grid-column: 1 / -1; background:var(--surface2); padding:16px; border-radius:var(--radius-sm);"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-lancamento-cc')">Cancelar</button><button class="btn btn-primary" id="btn-salvar-cc" onclick="salvarLancamentoCC()">Salvar</button></div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-limpar-tudo">
+  <div class="modal" style="max-width:400px">
+    <h2>🗑 Limpar Dados</h2>
+    <p style="font-size:0.85rem;color:var(--text2);margin-bottom:16px">Digite a sua senha atual para confirmar:</p>
+    <div class="form-group" style="margin-bottom:8px"><input type="password" id="limpar-senha" onkeydown="if(event.key==='Enter')confirmarLimparTudo()"></div>
+    <div id="limpar-erro" style="color:var(--red);font-size:0.8rem;margin-bottom:12px;display:none">Senha incorreta!</div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-limpar-tudo')">Cancelar</button><button class="btn btn-danger" onclick="confirmarLimparTudo()">Confirmar</button></div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-fechar-fatura">
+  <div class="modal">
+    <h2>🔒 Fechar Fatura</h2>
+    <div style="font-size:0.9rem;color:var(--text3);margin-bottom:20px;line-height:1.6">Ao fechar a fatura, os gastos do cartão neste mês serão convertidos em uma despesa única pendente. Todas as divisões familiares vinculadas a estas compras serão preservadas e aplicadas à pendência gerada, garantindo que o acerto de contas seja feito no momento do pagamento da fatura. Caso precise corrigir algo depois, a fatura pode ser reaberta para edição (botão 🔓) enquanto estiver pendente e o mês não estiver fechado.</div>
+    <div class="form-group" style="margin-bottom:16px"><label>Cartão</label><select id="ff-cartao-sel"></select></div>
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:0.85rem;color:var(--text3)">Total a pagar</span><span class="amount-negative" style="font-weight:700;font-size:1.1rem" id="ff-total">R$ 0,00</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="font-size:0.85rem;color:var(--text3)">Nº de compras</span><span style="font-weight:600" id="ff-qtd">0</span></div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px"><label>Data Venc. Fatura</label><input type="date" id="ff-venc"></div>
+    <div class="form-group"><label>Forma Pagamento</label><select id="ff-forma"><option value="Conta Corrente">🏦 Conta Corrente</option><option value="PIX">⚡ PIX</option><option value="Terceiros">🤝 Terceiros</option></select></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-fechar-fatura')">Cancelar</button><button class="btn btn-danger" onclick="confirmarFecharFatura()">🔒 Fechar</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-fechar-mes">
+  <div class="modal">
+    <h2>🔒 Fechar Mês — <span id="fm-mes-label"></span></h2>
+    <div style="font-size:0.9rem;color:var(--text3);margin-bottom:16px;line-height:1.6">Ao fechar o mês, todos os lançamentos deste período serão bloqueados contra alterações. Opcionalmente, registre abaixo as considerações/observações deste mês — elas poderão ser exibidas no Relatório Executivo.</div>
+    <div class="form-group"><label>📝 Considerações do Mês (opcional)</label><textarea id="fm-consideracoes" rows="5" placeholder="Ex: Aumento de receita devido à campanha de matrículas. Despesa extra com manutenção do imóvel..."></textarea></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-fechar-mes')">Cancelar</button><button class="btn btn-danger" onclick="confirmarFecharMes()">🔒 Fechar Mês</button></div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-membro">
+  <div class="modal">
+    <h2 id="modal-membro-title">Perfil do Usuário</h2>
+    <div class="form-grid-2">
+      <div class="form-group" style="grid-column:1 / -1"><label>Nome</label><input type="text" id="mb-nome" oninput="updateEmpresaResponsavelLabel()"></div>
+      <div class="form-group" style="grid-column:1 / -1"><label>URL da Foto (Opcional)</label><input type="text" id="mb-foto" placeholder="Cole o link de uma imagem da internet"></div>
+      <div class="form-group"><label>E-mail</label><input type="email" id="mb-email"></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="mb-senha" placeholder="Deixe em branco para manter a atual"></div>
+      <div class="form-group"><label>Visibilidade no App</label><select id="mb-visibilidade"><option value="todas">Ver todas as despesas</option><option value="proprias">Ver SOMENTE as próprias</option></select></div>
+      <div class="form-group"><label>Receita Mensal (R$)</label><input type="text" inputmode="decimal" id="mb-renda" oninput="formatCurrencyInput(this)"></div>
+      <div class="form-group"><label>Nível de Acesso</label><select id="mb-acesso"><option value="admin">Administrador</option><option value="consulta">Restrito (Sem apagar)</option><option value="pendente_aprovacao">Pendente aprovação</option><option value="bloqueado">Bloqueado</option></select></div>
+      <div class="form-group"><label>Grau</label><select id="mb-tipo"><option>Titular</option><option>Cônjuge</option><option>Filho(a)</option><option>Colaborador</option><option>Prestador</option><option>Auditor</option><option>Outro</option></select></div>
+      <div class="form-group"><label>Cor do Perfil</label><input type="color" id="mb-cor" style="height:42px;padding:2px;width:100%"></div>
+      <div class="form-group"><label>Plano</label><select id="mb-plano" onchange="togglePixUpload(this.value); toggleEmpresaOption(this.value)"><option value="premium">MiPessoal Premium (R$ 9,90/mês)</option><option value="empresa">MiEmpresas (R$ 299,00/mês)</option></select></div>
+      
+      <div id="mb-pagamento-group" style="display:block; grid-column: 1 / -1; background: var(--surface2); padding: 14px; border-radius: 8px; border-left: 3px solid var(--accent);">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px">👤 MiPessoal Premium — R$ 9,90/mês</div>
+        <div style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:10px">
+          • Controle financeiro pessoal e familiar<br>
+          • Cartões de crédito com parcelamentos<br>
+          • Lançamentos fixos recorrentes<br>
+          • Relatórios PDF e Excel
+        </div>
+        <input type="file" id="mb-pix-file" accept="image/*,.pdf" style="display:none">
+        <div id="mb-pix-info" style="display:none"></div>
+        <span id="mb-pix-badge" style="display:none"></span>
+      </div>
+      <div id="mb-empresa-group" style="display:none; grid-column: 1 / -1; background: var(--surface2); padding: 14px; border-radius: 8px; border-left: 3px solid var(--accent);">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px">🏢 MiEmpresas — R$ 299,00/mês</div>
+        <div style="font-size:0.82rem;color:var(--text2);line-height:1.5;margin-bottom:10px">
+          Ao ativar, você terá acesso a:<br>
+          • <b>Plano de Contas PJ</b> com categorias empresariais (Receitas e Despesas)<br>
+          • <b>Relatórios empresariais</b> (PDF e Excel) direto na tela Início<br>
+          • <b>Contas bancárias</b> corrente e poupança<br>
+          • Todas as funcionalidades Premium incluídas
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:6px">🏢 Cadastro da Empresa (Matriz)</div>
+          <div style="font-size:0.78rem;color:var(--text3);margin-bottom:10px;line-height:1.4">
+            Dados de Pessoa Jurídica da empresa matriz. Estas informações aparecerão no cabeçalho dos relatórios empresariais.
+          </div>
+          <div class="form-grid-2" style="gap:10px">
+            <div class="form-group" style="grid-column:1 / -1"><label>Razão Social</label><input type="text" id="emp-razao-social" placeholder="Ex: Center Kids Educação Infantil LTDA"></div>
+            <div class="form-group"><label>Nome Fantasia</label><input type="text" id="emp-nome-fantasia"></div>
+            <div class="form-group"><label>CNPJ</label><input type="text" id="emp-cnpj" placeholder="00.000.000/0000-00"></div>
+            <div class="form-group"><label>Inscrição Estadual/Municipal</label><input type="text" id="emp-inscricao"></div>
+            <div class="form-group"><label>Telefone</label><input type="text" id="emp-telefone"></div>
+            <div class="form-group" style="grid-column:1 / -1"><label>Endereço</label><input type="text" id="emp-endereco" placeholder="Rua, número, bairro"></div>
+            <div class="form-group"><label>Cidade</label><input type="text" id="emp-cidade"></div>
+            <div class="form-group"><label>UF</label><input type="text" id="emp-uf" maxlength="2" style="text-transform:uppercase"></div>
+            <div class="form-group" style="grid-column:1 / -1"><label>E-mail da Empresa</label><input type="email" id="emp-email"></div>
+          </div>
+          <div style="margin-top:10px;font-size:0.78rem;color:var(--text3)">Responsável pela empresa: <b id="emp-responsavel-label">—</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-membro')">Cancelar</button><button class="btn btn-primary" onclick="salvarMembro()">Salvar</button></div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-divisao">
+  <div class="modal">
+    <h2 id="modal-divisao-title">Registar Divisão</h2>
+    <div class="form-grid-2">
+      <div class="form-group" style="grid-column:1 / -1"><label>Descrição</label><input type="text" id="div-desc"></div>
+      <div class="form-group"><label>Valor Total (R$)</label><input type="text" inputmode="decimal" id="div-valor" oninput="formatCurrencyInput(this);updateSplitVals('div-splits', 'div-valor')"></div>
+      <div class="form-group"><label>Data</label><input type="date" id="div-data"></div>
+      <div class="form-group" style="grid-column:1 / -1"><label>Categoria</label><select id="div-cat"></select></div>
+    </div>
+    <div id="div-splits" style="margin-top:10px; background:var(--surface2); padding:16px; border-radius:var(--radius-sm);"></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-divisao')">Cancelar</button><button class="btn btn-primary" onclick="salvarDivisao()">Salvar</button></div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-categoria">
+  <div class="modal">
+    <h2 id="modal-categoria-title">Gerir Categoria</h2>
+    <div class="form-grid-2">
+      <div class="form-group" style="grid-column:1 / -1"><label>Nome da Categoria</label><input type="text" id="cat-nome"></div>
+      <div class="form-group"><label>Classificação</label><select id="cat-tipo"><option value="despesa">Despesa</option><option value="receita">Receita</option><option value="ambos">Ambos</option></select></div>
+      <div class="form-group"><label>Ícone (Emoji)</label><input type="text" id="cat-icone" maxlength="4" placeholder="🛒"></div>
+      <div class="form-group" style="grid-column:1 / -1"><label>Cor</label><input type="color" id="cat-cor" style="height:42px;padding:2px;width:100%"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-categoria')">Cancelar</button><button class="btn btn-primary" onclick="salvarCategoria()">Salvar</button></div>
+  </div>
+</div>
+
+
+<!-- ===== MODAL CONFIRM (substitui alert de confirmação) ===== -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="max-width:420px;text-align:center">
+    <div id="confirm-icon" style="font-size:2.2rem;margin-bottom:12px">⚠️</div>
+    <h2 id="confirm-title" style="margin-bottom:10px">Confirmar ação</h2>
+    <p id="confirm-msg" style="font-size:0.9rem;color:var(--text2);line-height:1.6;margin-bottom:22px"></p>
+    <div class="modal-footer" style="justify-content:center;gap:12px">
+      <button class="btn btn-outline" id="confirm-cancel-btn">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL ALERT (substitui alert() de mensagem simples) ===== -->
+<div class="modal-overlay" id="modal-alert">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div id="alert-icon" style="font-size:2rem;margin-bottom:10px">ℹ️</div>
+    <p id="alert-msg" style="font-size:0.95rem;color:var(--text2);line-height:1.6;margin-bottom:20px"></p>
+    <button class="btn btn-primary" onclick="closeModal('modal-alert')">OK</button>
+  </div>
+</div>
+
+<!-- ===== MODAL RELATÓRIO GERADO (substitui toastInfo dos relatórios em PDF) ===== -->
+<div class="modal-overlay" id="modal-relatorio-ok">
+  <div class="modal" style="max-width:420px; text-align:center; padding: 35px 28px 28px; border-top: 5px solid var(--accent);">
+    <div id="relatorio-ok-icon" style="font-size:3.5rem; margin-bottom:12px;">✅</div>
+    <h2 id="relatorio-ok-title" style="margin-bottom:10px; font-size: 1.5rem; font-weight: 700;">Relatório Pronto!</h2>
+    <p id="relatorio-ok-msg" style="font-size:0.9rem; color:var(--text2); line-height:1.6; margin-bottom:20px;"></p>
+
+    <div id="relatorio-ok-steps" style="text-align:left; background:var(--surface2); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding:18px; margin-bottom:24px; font-size:0.85rem; color:var(--text); line-height:1.6; display: flex; flex-direction: column; gap: 10px;">
+    </div>
+
+    <button class="btn btn-primary" style="width:100%; padding:14px; font-size: 1.05rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(124,106,247,0.3);" onclick="closeModal('modal-relatorio-ok')">Tudo certo, entendi!</button>
+  </div>
+</div>
+
+<!-- ===== PÁGINA AUDITORIA ===== -->
+<!-- será injetada no app-wrapper via JS para manter a mesma estrutura das outras páginas -->
+
+<!-- Modal Projeção de Fixas -->
+<div class="modal-overlay" id="modal-projecao-fixas">
+  <div class="modal" style="max-width:520px">
+    <h2>📌 Projeção de Fixas</h2>
+    <p style="font-size:0.85rem;color:var(--text3);margin-bottom:18px;line-height:1.6">
+      Gera um relatório com o histórico real dos meses anteriores e a <b>projeção do próximo mês</b> com base nas contas fixas ativas.
+    </p>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label>Meses de histórico</label>
+        <select id="proj-meses">
+          <option value="3">3 meses</option>
+          <option value="6" selected>6 meses</option>
+          <option value="12">12 meses</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Incluir projeção</label>
+        <select id="proj-incluir-prox">
+          <option value="1">Próximo mês projetado</option>
+          <option value="0">Apenas histórico</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Tipo</label>
+        <select id="proj-tipo">
+          <option value="">Receitas e Despesas</option>
+          <option value="receita">Somente Receitas</option>
+          <option value="despesa">Somente Despesas</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-projecao-fixas')">Cancelar</button>
+      <button class="btn btn-primary" onclick="gerarRelatorioProjecaoFixas()">📄 Gerar Relatório</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<datalist id="favorecidos-list"></datalist>
+
+
+<!-- Modal Importar Extrato -->
+<div class="modal-overlay" id="modal-extrato">
+  <div class="modal" style="max-width:680px">
+    <h2>📂 Importar Extrato (CSV/OFX)</h2>
+    <p style="font-size:0.85rem;color:var(--text3);margin-bottom:16px;line-height:1.6">
+      Selecione um arquivo CSV (colunas: <b>Data;Descrição;Valor</b>) ou OFX. Os lançamentos duplicados serão detectados automaticamente pela combinação de <b>data + descrição + valor</b>.
+    </p>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Arquivo de Extrato (CSV ou OFX)</label>
+      <input type="file" id="extrato-file" accept=".csv,.ofx,.txt" style="font-size:0.85rem;padding:10px" onchange="previewExtrato(event)">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Conta / Origem</label>
+      <select id="extrato-conta"></select>
+      <div id="extrato-conta-hint" style="font-size:0.75rem;color:var(--text3);margin-top:4px;display:none">
+        💡 Cadastre contas em <b>Ajustes → Contas Bancárias</b> para vinculá-las ao importar.
+      </div>
+    </div>
+    <div id="extrato-preview" style="display:none;margin-bottom:12px">
+      <div style="font-size:0.8rem;font-weight:700;color:var(--text2);margin-bottom:8px" id="extrato-preview-info"></div>
+      <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+        <table style="font-size:0.8rem;min-width:0">
+          <thead><tr>
+            <th style="min-width:80px">Data</th>
+            <th style="min-width:200px">Descrição</th>
+            <th style="min-width:80px">Valor</th>
+            <th style="min-width:60px">Status</th>
+          </tr></thead>
+          <tbody id="extrato-preview-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-extrato')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-extrato" onclick="confirmarImportarExtrato()" style="display:none">✅ Importar Lançamentos</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Categoria PJ -->
+<div class="modal-overlay" id="modal-cat-pj">
+  <div class="modal" style="max-width:500px">
+    <h2 id="modal-cat-pj-title">Nova Conta Financeira</h2>
+    <div class="form-grid-2">
+      <div class="form-group" style="grid-column:1 / -1"><label>Nome da Conta</label><input type="text" id="catpj-nome"></div>
+      <div class="form-group" style="grid-column:1 / -1"><label>Tipo</label><select id="catpj-tipo" onchange="popularSubgruposSelect()"><option value="receita">Receita</option><option value="despesa">Despesa</option></select></div>
+      <div class="form-group" style="grid-column:1 / -1">
+        <label>Subgrupo</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="catpj-grupo" style="flex:1">
+            <option value="Receitas Operacionais">📥 Receitas Operacionais</option>
+            <option value="Créditos Não Operacionais">💰 Créditos Não Operacionais</option>
+            <option value="Créditos de Transferência">🔁 Créditos de Transferência</option>
+            <option value="Pessoal Próprio">👥 Pessoal Próprio</option>
+            <option value="Materiais de Consumo Geral">📦 Materiais de Consumo Geral</option>
+            <option value="Materiais para Revenda">🏷️ Materiais para Revenda</option>
+            <option value="Serviços de Terceiros">🤝 Serviços de Terceiros</option>
+            <option value="Despesas Operacionais Gerais">🏢 Despesas Operacionais Gerais</option>
+            <option value="Despesas Financeiras">🏦 Despesas Financeiras</option>
+            <option value="Impostos e Taxas">📋 Impostos e Taxas</option>
+            <option value="Débitos Não Operacionais">📤 Débitos Não Operacionais</option>
+            <option value="Débitos de Transferência">🔁 Débitos de Transferência</option>
+          </select>
+          <button type="button" class="btn btn-outline btn-sm" onclick="abrirGerirSubgrupos()" title="Criar ou editar subgrupos" style="white-space:nowrap;flex-shrink:0">✏️ Subgrupos</button>
+        </div>
+      </div>
+      <div class="form-group"><label>Ícone (Emoji)</label><input type="text" id="catpj-icone" maxlength="4" placeholder="📝"></div>
+      <div class="form-group" style="grid-column:1 / -1"><label>Cor</label><input type="color" id="catpj-cor" style="height:42px;padding:2px;width:100%"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-cat-pj')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCategoriaPJ()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Plano de Indicador (cadastro de métrica) -->
+<div class="modal-overlay" id="modal-plano-indicador">
+  <div class="modal" style="max-width:460px">
+    <h2 id="modal-plano-indicador-title">Novo Indicador</h2>
+    <div class="form-grid-2">
+      <div class="form-group" style="grid-column:1 / -1"><label>Nome do Indicador</label><input type="text" id="pind-nome" placeholder="Ex: Quantidade de Alunos, Quadro de Pessoal..."></div>
+      <div class="form-group"><label>Unidade de Medida</label><input type="text" id="pind-unidade" placeholder="Ex: alunos, func, horas, kg..."></div>
+      <div class="form-group">
+        <label>Comportamento no Período</label>
+        <select id="pind-tipo-agregacao">
+          <option value="fluxo">Fluxo (soma no período)</option>
+          <option value="estoque">Estoque (média no período)</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1 / -1">
+        <label>Meta (opcional)</label>
+        <input type="text" inputmode="decimal" id="pind-meta" placeholder="Ex: 5 (exibe linha de meta no gráfico de evolução)" oninput="formatCurrencyInput(this)">
+      </div>
+      <div class="form-group" style="grid-column:1 / -1; border-top:1px solid var(--border); padding-top:12px; margin-top:4px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="pind-is-calculado" onchange="toggleCamposIndicadorCalculado()" style="width:auto">
+          <span>Indicador calculado (razão entre dois outros indicadores)</span>
+        </label>
+      </div>
+      <div id="pind-campos-calculado" style="display:none;grid-column:1 / -1" class="form-grid-2">
+        <div class="form-group"><label>Numerador</label><select id="pind-calc-num"></select></div>
+        <div class="form-group"><label>Denominador</label><select id="pind-calc-den"></select></div>
+        <div class="form-group" style="grid-column:1 / -1">
+          <label>Formato do Resultado</label>
+          <select id="pind-calc-formato">
+            <option value="pct">Percentual (%)</option>
+            <option value="razao">Razão decimal</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1 / -1">
+          <p style="font-size:0.75rem;color:var(--text3);margin:0">Ex: Absenteísmo = Horas Perdidas ÷ Horas Totais. Cadastre os dois indicadores-base separadamente e lance os valores mensais neles; este indicador exibe a razão automaticamente, sem precisar de lançamento próprio.</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-plano-indicador')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarPlanoIndicador()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registro de Indicador (lançamento mensal) -->
+<div class="modal-overlay" id="modal-registro-indicador">
+  <div class="modal" style="max-width:440px">
+    <h2 id="modal-registro-indicador-title">Registrar Dado Operacional</h2>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Data de Referência</label><input type="date" id="ind-reg-data"></div>
+      <div class="form-group"><label>Indicador</label><select id="ind-reg-tipo"></select></div>
+      <div class="form-group" style="grid-column:1 / -1"><label>Valor Registado</label><input type="text" inputmode="decimal" id="ind-reg-valor" placeholder="Ex: 35" oninput="formatCurrencyInput(this)"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-registro-indicador')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarRegistroIndicador()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Conta Bancária -->
+<div class="modal-overlay" id="modal-conta-bancaria">
+  <div class="modal" style="max-width:480px">
+    <h2 id="modal-conta-bancaria-title">Nova Conta Bancária</h2>
+    <div class="form-grid-2">
+      <div class="form-group" style="grid-column:1 / -1"><label>Nome da Conta</label><input type="text" id="cb-nome" placeholder="Ex: Itaú Conta Corrente, Cora..."></div>
+      <div class="form-group"><label>Tipo</label>
+        <select id="cb-tipo">
+          <option value="Conta Corrente">🏦 Conta Corrente</option>
+          <option value="Poupança">🏦 Poupança</option>
+          <option value="Caixa / Dinheiro">💵 Caixa / Dinheiro</option>
+          <option value="Conta Digital">⚡ Conta Digital</option>
+          <option value="Investimento">📈 Investimento</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Cor</label><input type="color" id="cb-cor" value="#4fa8f5" style="height:42px;padding:2px;width:100%"></div>
+      <div class="form-group" style="grid-column:1 / -1;background:var(--surface2);padding:12px;border-radius:8px" id="cb-saldo-inicial-group">
+        <label>Saldo Inicial (R$)</label>
+        <input type="text" inputmode="decimal" id="cb-saldo-inicial" placeholder="Ex: 1.500,00" oninput="formatCurrencyInput(this)">
+        <div style="font-size:0.76rem;color:var(--text3);margin-top:6px;line-height:1.4">
+          Será lançado automaticamente como uma transação de "Saldo Inicial" na data informada abaixo.
+        </div>
+        <label style="margin-top:8px;display:block">Data do Saldo Inicial</label>
+        <input type="date" id="cb-saldo-data">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-conta-bancaria')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarContaBancaria()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-investimento">
+  <div class="modal" style="max-width:480px">
+    <h2 id="modal-investimento-title">Novo Investimento</h2>
+    <div class="form-grid-2">
+      <div class="form-group" style="grid-column:1 / -1"><label>Nome do Investimento</label><input type="text" id="inv-nome" placeholder="Ex: CDB Liquidez Diária, Tesouro Selic..."></div>
+      <div class="form-group"><label>Tipo</label>
+        <select id="inv-tipo">
+          <option value="Renda Fixa">📈 Renda Fixa</option>
+          <option value="Renda Variável">📊 Renda Variável</option>
+          <option value="Fundo de Investimento">🗂️ Fundo de Investimento</option>
+          <option value="Outro">📝 Outro</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Instituição</label><input type="text" id="inv-instituicao" placeholder="Ex: Banco Itaú, XP..."></div>
+      <div class="form-group" style="grid-column:1 / -1"><label>Data da Aplicação</label><input type="date" id="inv-data"></div>
+      <div class="form-group" style="grid-column:1 / -1"><label>Conta Bancária de Origem</label>
+        <select id="inv-conta-bancaria"></select>
+      </div>
+      <div class="form-group" style="grid-column:1 / -1;background:var(--surface2);padding:12px;border-radius:8px" id="inv-valor-inicial-group">
+        <label>Aporte Inicial (R$)</label>
+        <input type="text" inputmode="decimal" id="inv-valor-inicial" placeholder="Ex: 50.000,00" oninput="formatCurrencyInput(this)">
+        <div style="font-size:0.76rem;color:var(--text3);margin-top:6px;line-height:1.4">
+          Será lançado como saída da conta de origem, sem afetar o resultado (DRE) do período.
+        </div>
+      </div>
+      <div class="form-group" style="grid-column:1 / -1" id="inv-cat-group">
+        <label>Categoria da Saída</label>
+        <select id="inv-cat"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-investimento')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarInvestimento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-mov-investimento">
+  <div class="modal" style="max-width:440px">
+    <h2 id="modal-mov-investimento-title">Novo Aporte</h2>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Data</label><input type="date" id="mov-inv-data"></div>
+      <div class="form-group"><label>Valor (R$)</label><input type="text" inputmode="decimal" id="mov-inv-valor" placeholder="Ex: 1.000,00" oninput="formatCurrencyInput(this)"></div>
+      <div class="form-group" style="grid-column:1 / -1;display:none" id="mov-inv-rend-check-group">
+        <label class="checkbox-wrapper" style="font-size:0.85rem;font-weight:600">
+          <input type="checkbox" id="mov-inv-rend-check" onchange="onToggleRendimentoDRE()">
+          <span>Lançar como receita financeira no DRE</span>
+        </label>
+        <div style="font-size:0.76rem;color:var(--text3);margin-top:6px;line-height:1.4">
+          Se marcado, o rendimento entra como receita normal (conta no resultado do período). Se não, apenas atualiza o saldo do investimento.
+        </div>
+      </div>
+      <div class="form-group" style="grid-column:1 / -1" id="mov-inv-conta-group">
+        <label>Conta Bancária</label>
+        <select id="mov-inv-conta"></select>
+      </div>
+      <div class="form-group" style="grid-column:1 / -1" id="mov-inv-cat-group">
+        <label>Categoria</label>
+        <select id="mov-inv-cat"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-mov-investimento')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarMovimentoInvestimento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-emprestimo">
+  <div class="modal" style="max-width:480px">
+    <h2 id="modal-emprestimo-title">Novo Empréstimo</h2>
+    <div class="form-grid-2">
+      <div class="form-group" style="grid-column:1 / -1"><label>Título</label><input type="text" id="emp-titulo" placeholder="Ex: Capital de Giro, Empréstimo ao Sócio..."></div>
+      <div class="form-group" id="emp-modalidade-group"><label>Modalidade</label>
+        <select id="emp-modalidade" onchange="onChangeModalidadeEmprestimo()">
+          <option value="Tomado">📥 Tomado (a empresa deve)</option>
+          <option value="Concedido">📤 Concedido (emprestei a alguém)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Instituição / Contraparte</label><input type="text" id="emp-instituicao" placeholder="Ex: Caixa Econômica, Fulano..."></div>
+      <div class="form-group" style="grid-column:1 / -1"><label>Data de Contratação</label><input type="date" id="emp-data"></div>
+      <div class="form-group" style="grid-column:1 / -1"><label>Conta Bancária Vinculada</label>
+        <select id="emp-conta-bancaria"></select>
+      </div>
+      <div id="emp-principal-group" style="grid-column:1 / -1;display:contents">
+        <div class="form-group" style="grid-column:1 / -1;background:var(--surface2);padding:12px;border-radius:8px">
+          <label>Valor Principal (R$)</label>
+          <input type="text" inputmode="decimal" id="emp-valor-principal" placeholder="Ex: 100.000,00" oninput="formatCurrencyInput(this)">
+        </div>
+        <div class="form-group"><label>Taxa de Juros (% a.m.)</label><input type="text" inputmode="decimal" id="emp-taxa-juros" placeholder="Ex: 1,85"></div>
+        <div class="form-group"><label>Número de Parcelas</label><input type="number" id="emp-num-parcelas" min="1" placeholder="Ex: 24"></div>
+        <div style="font-size:0.76rem;color:var(--text3);grid-column:1 / -1;line-height:1.4">
+          As parcelas são geradas pela Tabela Price (parcela fixa, juros decrescente). Só a amortização mexe no saldo devedor — os juros de cada parcela contam como resultado financeiro no DRE.
+        </div>
+      </div>
+      <div class="form-group" style="grid-column:1 / -1" id="emp-cat-contratacao-group">
+        <label id="emp-cat-contratacao-label">Categoria de Entrada (Recebimento do Empréstimo)</label>
+        <select id="emp-cat-contratacao"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-emprestimo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarEmprestimo()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-parcela-emprestimo">
+  <div class="modal" style="max-width:420px">
+    <h2 id="modal-parcela-emprestimo-title">Pagar Parcela</h2>
+    <div id="parc-emp-resumo" style="background:var(--surface2);padding:12px;border-radius:8px;font-size:0.85rem;margin-bottom:14px"></div>
+    <div class="form-grid-2">
+      <div class="form-group" style="grid-column:1 / -1"><label>Data</label><input type="date" id="parc-emp-data"></div>
+      <div class="form-group" style="grid-column:1 / -1"><label>Conta Bancária</label>
+        <select id="parc-emp-conta"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-parcela-emprestimo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarPagamentoParcela()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Gerir Subgrupos PJ -->
+<div class="modal-overlay" id="modal-subgrupos-pj">
+  <div class="modal" style="max-width:520px">
+    <h2>📂 Gerir Subgrupos</h2>
+    <p style="font-size:0.82rem;color:var(--text3);margin-bottom:14px">Crie, renomeie ou remova subgrupos do Plano de Contas Financeiro.</p>
+    <div id="subgrupos-lista" style="max-height:320px;overflow-y:auto;margin-bottom:16px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:4px">
+      <input type="text" id="novo-subgrupo-nome" placeholder="Nome do novo subgrupo..." style="flex:1">
+      <select id="novo-subgrupo-tipo" style="width:120px">
+        <option value="receita">Receita</option>
+        <option value="despesa">Despesa</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="adicionarSubgrupo()">＋ Adicionar</button>
+    </div>
+    <div class="modal-footer" style="margin-top:16px">
+      <button class="btn btn-outline" onclick="closeModal('modal-subgrupos-pj')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-classif">
+  <div class="modal" style="max-width:400px">
+    <h2>🏷 Classificar Categoria</h2>
+    <p id="classif-desc" style="font-size:0.9rem;color:var(--text2);margin-bottom:16px;font-weight:600;word-break:break-word"></p>
+    <input type="hidden" id="classif-id">
+    <input type="hidden" id="classif-tipo-hidden" value="cc">
+    <div class="form-group" style="margin-bottom:20px"><label>Categoria</label><select id="classif-cat"></select></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-classif')">Cancelar</button><button class="btn btn-primary" onclick="salvarClassificacao()">Aplicar</button></div>
+  </div>
+</div>
+
+
+<div id="fab-wrapper">
+  <button id="fab-main" class="fab-main" onclick="toggleFab()" title="Novo lançamento" aria-label="Novo lançamento">
+    <span id="fab-icon-el" style="font-size:1.6rem;line-height:1;font-weight:300;transition:transform 0.3s ease">＋</span>
+  </button>
+  <div id="fab-dial" class="fab-dial">
+    <button class="fab-item fab-despesa" onclick="closeFab();novaTransacao('despesa')"><span class="fab-icon">📉</span><span>Nova Despesa</span></button>
+    <button class="fab-item fab-receita" onclick="closeFab();novaTransacao('receita')"><span class="fab-icon">📈</span><span>Nova Receita</span></button>
+    <button class="fab-item fab-cc" onclick="closeFab();novoLancamentoCC()"><span class="fab-icon">💳</span><span>Compra Cartão</span></button>
+  </div>
+</div>
+<div id="fab-backdrop" class="fab-backdrop" onclick="closeFab()"></div>
+
+
+<div class="modal-overlay" id="modal-baixa">
+  <div class="modal" style="max-width:400px">
+    <h2 id="baixa-title">✔ Confirmar Baixa</h2>
+    <p id="baixa-desc" style="font-size:0.85rem;color:var(--text2);margin-bottom:16px;font-weight:600;word-break:break-word"></p>
+    <div class="form-group">
+      <label>Data do pagamento / recebimento</label>
+      <input type="date" id="baixa-data">
+    </div>
+    <div class="form-group">
+      <label>📎 Comprovante (opcional)</label>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button type="button" class="btn btn-outline btn-sm" onclick="abrirCameraComprovante()" style="flex:1" disabled title="Anexo de comprovantes temporariamente desativado">📷 Câmera</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('baixa-file').click()" style="flex:1" disabled title="Anexo de comprovantes temporariamente desativado">🖼️ Galeria/Arquivo</button>
+      </div>
+      <p style="font-size:0.75rem;color:var(--text3);margin:-4px 0 8px">Anexo de comprovantes temporariamente desativado.</p>
+      <input type="file" id="baixa-file" accept="image/*,application/pdf" style="display:none" onchange="handleComprovanteFile(event)" disabled>
+      <div id="baixa-foto-preview" style="display:none;margin-top:8px;text-align:center">
+        <img id="baixa-foto-img" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--border)">
+        <div style="margin-top:6px;display:flex;gap:6px;justify-content:center">
+          <span id="baixa-foto-label" style="font-size:0.78rem;color:var(--text3)"></span>
+          <button type="button" class="btn btn-danger btn-sm" onclick="removerComprovantePreview()" style="padding:2px 8px;font-size:0.75rem">✕</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-baixa')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarBaixa()">✔ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL PAINEL GERENCIAL & AUDITORIA
+════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-painel-gerencial">
+  <div class="modal" style="max-width:860px;width:100%">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h2 style="margin:0">🔍 Painel Gerencial</h2>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-painel-gerencial')">✕ Fechar</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px">
+      <div class="form-group" style="margin:0"><label style="font-size:0.75rem">Período</label><select id="pg-periodo" onchange="pgLimparCanvas()" style="font-size:0.85rem"><option value="mes">Mês atual</option><option value="3m">Últimos 3 meses</option><option value="6m">Últimos 6 meses</option><option value="ano">Ano atual</option><option value="tudo">Todo o histórico</option></select></div>
+      <div class="form-group" style="margin:0"><label style="font-size:0.75rem">Usuário</label><select id="pg-membro" onchange="pgLimparCanvas()" style="font-size:0.85rem"><option value="">Todos</option></select></div>
+      <div class="form-group" style="margin:0"><label style="font-size:0.75rem">Tipo</label><select id="pg-tipo" onchange="pgLimparCanvas()" style="font-size:0.85rem"><option value="despesa">Despesas</option><option value="receita">Receitas</option><option value="ambos">Ambos</option></select></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);padding:10px 14px;border-radius:8px;border-left:3px solid #7c6af7"><div><span style="font-weight:700;font-size:0.9rem">🥇 Curva ABC de Favorecidos</span><span class="badge badge-blue" style="margin-left:8px;font-size:0.65rem">V1 · Top 15</span></div><div style="display:flex;gap:6px"><button class="btn btn-sm btn-primary" onclick="pgRenderABC(false)" title="Ver na tela">👁️ Ver</button><button class="btn btn-sm" style="background:#1d6f42;color:#fff" onclick="pgRenderABC(true)" title="Exportar XLS">📗 XLS</button></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);padding:10px 14px;border-radius:8px;border-left:3px solid #22d3a1"><div><span style="font-weight:700;font-size:0.9rem">🥇 Curva ABC de Favorecidos</span><span class="badge badge-green" style="margin-left:8px;font-size:0.65rem">V2 · Concentração & Risco</span></div><div style="display:flex;gap:6px"><button class="btn btn-sm btn-primary" onclick="pgRenderABCV2(false)" title="Ver na tela">👁️ Ver</button><button class="btn btn-sm" style="background:#1d6f42;color:#fff" onclick="pgRenderABCV2(true)" title="Exportar XLS">📗 XLS</button></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);padding:10px 14px;border-radius:8px;border-left:3px solid #f5c542"><div><span style="font-weight:700;font-size:0.9rem">🌊 Onda de Parcelamentos</span><span class="badge badge-yellow" style="margin-left:8px;font-size:0.65rem">V1 · Projeção 6 meses</span></div><div style="display:flex;gap:6px"><button class="btn btn-sm btn-primary" onclick="pgRenderOnda(false)" title="Ver na tela">👁️ Ver</button><button class="btn btn-sm" style="background:#1d6f42;color:#fff" onclick="pgRenderOnda(true)" title="Exportar XLS">📗 XLS</button></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);padding:10px 14px;border-radius:8px;border-left:3px solid #f04f5e"><div><span style="font-weight:700;font-size:0.9rem">🌊 Onda de Parcelamentos</span><span class="badge badge-red" style="margin-left:8px;font-size:0.65rem">V2 · por Cartão & Categoria</span></div><div style="display:flex;gap:6px"><button class="btn btn-sm btn-primary" onclick="pgRenderOndaV2(false)" title="Ver na tela">👁️ Ver</button><button class="btn btn-sm" style="background:#1d6f42;color:#fff" onclick="pgRenderOndaV2(true)" title="Exportar XLS">📗 XLS</button></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);padding:10px 14px;border-radius:8px;border-left:3px solid #4fa8f5"><div><span style="font-weight:700;font-size:0.9rem">🎯 Orçado x Realizado</span><span class="badge badge-blue" style="margin-left:8px;font-size:0.65rem">V1 · por Categoria</span></div><div style="display:flex;gap:6px"><button class="btn btn-sm btn-primary" onclick="pgRenderOrcado(false)" title="Ver na tela">👁️ Ver</button><button class="btn btn-sm" style="background:#1d6f42;color:#fff" onclick="pgRenderOrcado(true)" title="Exportar XLS">📗 XLS</button></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);padding:10px 14px;border-radius:8px;border-left:3px solid #b044f5"><div><span style="font-weight:700;font-size:0.9rem">🎯 Orçado x Realizado</span><span class="badge badge-purple" style="margin-left:8px;font-size:0.65rem">V2 · Desvio & Saúde Financeira</span></div><div style="display:flex;gap:6px"><button class="btn btn-sm btn-primary" onclick="pgRenderOrcadoV2(false)" title="Ver na tela">👁️ Ver</button><button class="btn btn-sm" style="background:#1d6f42;color:#fff" onclick="pgRenderOrcadoV2(true)" title="Exportar XLS">📗 XLS</button></div></div>
+    </div>
+    <div id="pg-resultado" style="max-height:460px;overflow-y:auto;border-radius:8px"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-painel-gerencial-projetos">
+  <div class="modal" style="max-width:900px;width:100%">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h2 style="margin:0">🔍 Painel Gerencial de Projetos</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" style="background:#e53e3e;color:#fff" onclick="exportarGerencialProjetosPDF()">📕 Exportar PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('modal-painel-gerencial-projetos')">✕ Fechar</button>
+      </div>
+    </div>
+    <div id="pgp-resultado"></div>
+  </div>
+</div>
+
+<script src="utils.js?v=20260706"></script>
+<script src="auth.js?v=20260706"></script>
+<script src="dashboard.js?v=20260706"></script>
+<script src="cartoes.js?v=20260706"></script>
+<script src="movimentacoes.js?v=20260706"></script>
+<script src="relatorios.js?v=20260706"></script>
+<script src="app.js?v=20260708"></script>
+
+<!-- Modal Detalhe Processo / POP -->
+<div class="modal-overlay" id="modal-processo-detalhe">
+  <div class="modal" style="max-width:660px;width:100%">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px">
+      <div>
+        <h2 style="margin:0;font-size:1.15rem">📄 Detalhes do Documento</h2>
+        <p style="margin:4px 0 0;font-size:0.8rem;color:var(--text3)">Visualização completa do POP / Manual / Protocolo</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+        <button class="btn btn-primary btn-sm" onclick="imprimirProcesso()" title="Imprimir / Salvar PDF" style="gap:6px">🖨️ Imprimir</button>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('modal-processo-detalhe')" style="padding:6px 10px">✕</button>
+      </div>
+    </div>
+
+    <!-- Grid de metadados -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px">
+      <div style="padding:12px 14px;background:var(--surface2);border-right:1px solid var(--border)">
+        <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px">Código</div>
+        <div id="modal-processo-det-codigo" style="font-weight:700;font-size:0.95rem;color:var(--text)">—</div>
+      </div>
+      <div style="padding:12px 14px;background:var(--surface2);border-right:1px solid var(--border)">
+        <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px">Tipo</div>
+        <div id="modal-processo-det-tipo" style="font-weight:600;color:var(--text)">—</div>
+      </div>
+      <div style="padding:12px 14px;background:var(--surface2)">
+        <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px">Status</div>
+        <div id="modal-processo-det-status" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700">—</div>
+      </div>
+      <div style="padding:12px 14px;background:var(--surface);border-right:1px solid var(--border);border-top:1px solid var(--border)">
+        <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px">Setor / Área</div>
+        <div id="modal-processo-det-area" style="font-weight:600;color:var(--text)">—</div>
+      </div>
+      <div style="padding:12px 14px;background:var(--surface);border-right:1px solid var(--border);border-top:1px solid var(--border)">
+        <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px">Última Revisão</div>
+        <div id="modal-processo-det-revisao" style="font-weight:600;color:var(--text)">—</div>
+      </div>
+      <div style="padding:12px 14px;background:var(--surface);border-top:1px solid var(--border)">
+        <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px">Link / Arquivo</div>
+        <div id="modal-processo-det-link" style="font-size:0.85rem">—</div>
+      </div>
+    </div>
+
+    <!-- Título completo -->
+    <div style="background:linear-gradient(135deg,rgba(124,106,247,0.08),rgba(34,211,161,0.06));border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;padding:12px 16px;margin-bottom:16px">
+      <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px">Título</div>
+      <div id="modal-processo-det-titulo" style="font-weight:700;font-size:1rem;color:var(--text)">—</div>
+    </div>
+
+    <!-- Descrição / Conteúdo -->
+    <div>
+      <div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:8px">📋 Descrição / Conteúdo do Procedimento</div>
+      <div id="modal-processo-det-descricao" style="border:1px solid var(--border);border-radius:8px;padding:14px 16px;background:var(--surface2);min-height:80px;font-size:0.875rem;line-height:1.7;color:var(--text)"></div>
+    </div>
+
+    <div style="margin-top:18px;text-align:right">
+      <button class="btn btn-outline" onclick="closeModal('modal-processo-detalhe')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+</body>
 </html>

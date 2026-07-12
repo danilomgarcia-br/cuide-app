@@ -1,10 +1,11 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, lazy, Suspense } from "react";
+import * as XLSX from "xlsx";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TEMA
 // ═══════════════════════════════════════════════════════════════════════════════
-const DARK={bg:"#07090f",sidebar:"#090c14",card:"#0c1017",cardBorder:"#151f30",inp:"#0a0f1c",inpBorder:"#182035",text:"#e2e8f0",muted:"#64748b",label:"#2d3f5a",secBox:"#080f1c",secBorder:"#1a2e52",filterBar:"#090c14",filterBorder:"#0f1929",calHead:"#090c14",day:"#0b1018",dayBorder:"#10192a",dayHover:"#0d1525",navBtn:"#2d4060",navHover:"#0d1828",navActive:"#0f2040",gridRow:"#09111a",modal:"#0c1017",modalBg:"rgba(0,0,0,.85)",upload:"#1a2e52",scrollTrack:"#090c14",scrollThumb:"#1e2a40",chipBorder:"#0f1929",sideBorder:"#0f1929"};
-const LIGHT={bg:"#f1f5f9",sidebar:"#ffffff",card:"#ffffff",cardBorder:"#e2e8f0",inp:"#f8fafc",inpBorder:"#cbd5e1",text:"#0f172a",muted:"#64748b",label:"#475569",secBox:"#f1f5f9",secBorder:"#cbd5e1",filterBar:"#ffffff",filterBorder:"#e2e8f0",calHead:"#ffffff",day:"#ffffff",dayBorder:"#e2e8f0",dayHover:"#f8fafc",navBtn:"#475569",navHover:"#f1f5f9",navActive:"#eff6ff",gridRow:"#f8fafc",modal:"#ffffff",modalBg:"rgba(15,23,42,.6)",upload:"#cbd5e1",scrollTrack:"#e2e8f0",scrollThumb:"#94a3b8",chipBorder:"#e2e8f0",sideBorder:"#e2e8f0"};
+const DARK={bg:"#0f0f14",sidebar:"#16161f",card:"#16161f",cardBorder:"#2a2a3d",inp:"#1e1e2a",inpBorder:"#2a2a3d",text:"#e8e8f0",muted:"#606080",label:"#606080",secBox:"#1e1e2a",secBorder:"#2a2a3d",filterBar:"#16161f",filterBorder:"#2a2a3d",calHead:"#16161f",day:"#1e1e2a",dayBorder:"#2a2a3d",dayHover:"#252535",navBtn:"#9090b0",navHover:"#1e1e2a",navActive:"#7c6af71f",gridRow:"#1e1e2a",modal:"#16161f",modalBg:"rgba(0,0,0,.85)",upload:"#2a2a3d",scrollTrack:"#16161f",scrollThumb:"#2a2a3d",chipBorder:"#2a2a3d",sideBorder:"#2a2a3d"};
+const LIGHT={bg:"#f2f2f7",sidebar:"#ffffff",card:"#ffffff",cardBorder:"#d1d1d6",inp:"#f4f4f8",inpBorder:"#d1d1d6",text:"#1c1c1e",muted:"#8e8e93",label:"#8e8e93",secBox:"#f4f4f8",secBorder:"#d1d1d6",filterBar:"#ffffff",filterBorder:"#d1d1d6",calHead:"#ffffff",day:"#f4f4f8",dayBorder:"#d1d1d6",dayHover:"#e5e5ea",navBtn:"#3a3a3c",navHover:"#f4f4f8",navActive:"#7c6af71a",gridRow:"#f4f4f8",modal:"#ffffff",modalBg:"rgba(15,23,42,.5)",upload:"#d1d1d6",scrollTrack:"#f2f2f7",scrollThumb:"#d1d1d6",chipBorder:"#d1d1d6",sideBorder:"#d1d1d6"};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONSTANTES — todas definidas ANTES de qualquer função ou seed
@@ -102,9 +103,9 @@ const STATUS_CHAMADO=["aberto","andamento","encerrado","novo_paciente","novo_age
 const COR_CHAMADO={aberto:"#f59e0b",andamento:"#3b82f6",encerrado:"#10b981",novo_paciente:"#a78bfa",novo_agendamento:"#38bdf8",devolvido:"#f87171"};
 const LABEL_CHAMADO={aberto:"📂 Aberto",andamento:"🔄 Andamento",encerrado:"✅ Encerrado",novo_paciente:"👤 Novo Paciente",novo_agendamento:"📅 Novo Agendamento",devolvido:"↩️ Devolvido"};
 const PRIORIDADE_CHAMADO=["Baixa","Normal","Alta","Urgente"];
-const COR_PRIORIDADE={Baixa:"#94a3b8",Normal:"#60a5fa",Alta:"#f59e0b",Urgente:"#ef4444"};
+const COR_PRIORIDADE={Baixa:"#94a3b8",Normal:"#a78bfa",Alta:"#f59e0b",Urgente:"#ef4444"};
 const STATUS_CONTRATO=["pendente","enviado","assinado","concluido","cancelado"];
-const COR_CONTRATO={pendente:"#94a3b8",enviado:"#f59e0b",assinado:"#60a5fa",concluido:"#22c55e",cancelado:"#ef4444"};
+const COR_CONTRATO={pendente:"#94a3b8",enviado:"#f59e0b",assinado:"#a78bfa",concluido:"#22c55e",cancelado:"#ef4444"};
 const LABEL_CONTRATO={pendente:"⏳ Pendente",enviado:"📤 Enviado",assinado:"✍️ Assinado",concluido:"✅ Concluído",cancelado:"❌ Cancelado"};
 const PERFIS=["profissional","atendimento","secretaria","supervisor_adm","coordenador","administrador","faturamento_supervisor","gestao_pessoas","agendamento"];
 const PERFIL_LABEL={profissional:"Profissional",atendimento:"Atendimento",secretaria:"Secretária",supervisor_adm:"Supervisor ADM",coordenador:"Coordenador",administrador:"Administrador",faturamento_supervisor:"Sup. Faturamento",gestao_pessoas:"Gestão de Pessoas",agendamento:"Agendamento"};
@@ -304,18 +305,18 @@ const CSS="*{box-sizing:border-box}body{margin:0}"+
 ".sidebar{background:var(--sb);border-right:1px solid var(--sbd);display:flex;flex-direction:column;flex-shrink:0;transition:width .22s cubic-bezier(.4,0,.2,1);overflow:hidden;height:100vh;position:relative;z-index:30}"+
 ".sidebar-inner{display:flex;flex-direction:column;height:100%;min-width:0}"+
 ".sidebar-brand{display:flex;align-items:center;gap:10px;padding:14px 13px 10px;border-bottom:1px solid var(--sbd);flex-shrink:0}"+
-".brand-logo{width:40px;height:40px;border-radius:14px;background:linear-gradient(150deg,#0f766e,#0d9488,#14b8a6);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;box-shadow:0 6px 18px #0d948870;position:relative;overflow:hidden}"+
-".brand-text{font-family:'Outfit',sans-serif;font-weight:900;font-size:18px;background:linear-gradient(135deg,#0d9488,#14b8a6,#5eead4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;overflow:hidden;line-height:1.1}"+
+".brand-logo{width:40px;height:40px;border-radius:14px;background:#7c6af7;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;box-shadow:0 6px 18px #7c6af770;position:relative;overflow:hidden}"+
+".brand-text{font-family:'Outfit',sans-serif;font-weight:900;font-size:18px;color:#7c6af7;white-space:nowrap;overflow:hidden;line-height:1.1}"+
 ".sidebar-user{padding:8px 12px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--sbd);flex-shrink:0}"+
-".user-avatar{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1d4ed820,#4f46e520);border:1px solid #3b82f630;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:800;color:#60a5fa}"+
+".user-avatar{width:28px;height:28px;border-radius:8px;background:#7c6af720;border:1px solid #7c6af730;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:800;color:#a78bfa}"+
 ".user-info{overflow:hidden;flex:1}"+
 ".user-name{font-size:11px;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}"+
 ".user-role{font-size:9px;font-weight:700;letter-spacing:.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}"+
 ".sidebar-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 6px;display:flex;flex-direction:column;gap:1px}"+
 ".sidebar-nav::-webkit-scrollbar{width:3px}.sidebar-nav::-webkit-scrollbar-track{background:transparent}.sidebar-nav::-webkit-scrollbar-thumb{background:var(--sm);border-radius:3px}"+
 ".nav-btn{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;border-radius:8px;border:none;background:transparent;color:var(--nv);font-weight:600;font-size:11.5px;cursor:pointer;text-align:left;transition:.12s;white-space:nowrap;position:relative;min-height:34px}"+
-".nav-btn:hover{background:var(--nh);color:#3b82f6}"+
-".nav-btn.active{background:var(--na);color:#3b82f6;font-weight:800}"+
+".nav-btn:hover{background:var(--nh);color:#7c6af7}"+
+".nav-btn.active{background:#7c6af7;color:#fff;font-weight:800}"+
 ".nav-icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;line-height:1}"+
 ".nav-label{overflow:hidden;text-overflow:ellipsis;flex:1}"+
 ".nav-badge{background:#ef4444;color:#fff;border-radius:10px;font-size:9px;font-weight:900;padding:1px 5px;min-width:14px;text-align:center;flex-shrink:0}"+
@@ -323,7 +324,7 @@ const CSS="*{box-sizing:border-box}body{margin:0}"+
 ".nav-btn:hover .nav-tooltip{opacity:1}"+
 ".sidebar-footer{padding:8px 6px;border-top:1px solid var(--sbd);display:flex;flex-direction:column;gap:4px;flex-shrink:0}"+
 ".sidebar-toggle{position:absolute;right:-13px;top:22px;width:26px;height:26px;border-radius:50%;background:var(--sb);border:1.5px solid var(--sbd);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--mt);font-size:11px;z-index:40;transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,.12)}"+
-".sidebar-toggle:hover{background:var(--na);color:#3b82f6;border-color:#3b82f6}"+
+".sidebar-toggle:hover{background:var(--na);color:#7c6af7;border-color:#7c6af7}"+
 /* ── ALERT PANEL desliza do sidebar ──────────────────────────────── */
 ".alert-panel{position:fixed;left:0;top:0;bottom:0;width:300px;background:var(--sb);border-right:1px solid var(--sbd);z-index:60;transform:translateX(-100%);transition:transform .25s cubic-bezier(.4,0,.2,1);box-shadow:4px 0 24px rgba(0,0,0,.18);display:flex;flex-direction:column}"+
 ".alert-panel.open{transform:translateX(0)}"+
@@ -333,16 +334,16 @@ const CSS="*{box-sizing:border-box}body{margin:0}"+
 ".main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;min-width:0}"+
 /* ── CARDS ───────────────────────────────────────────────────────── */
 ".card{background:var(--card);border:1px solid var(--cb);border-radius:14px;transition:box-shadow .15s}"+
-".rh{cursor:pointer}.rh:hover{box-shadow:0 2px 12px rgba(59,130,246,.10);border-color:#3b82f640!important}"+
+".rh{cursor:pointer}.rh:hover{box-shadow:0 2px 12px rgba(124,106,247,.10);border-color:#7c6af740!important}"+
 /* ── INPUTS ──────────────────────────────────────────────────────── */
 "input,select,textarea{width:100%;background:var(--inp);border:1.5px solid var(--ib);color:var(--tx);border-radius:9px;padding:8px 12px;font-family:inherit;font-size:13px;transition:border-color .15s,box-shadow .15s}"+
-"input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px #3b82f615}"+
+"input:focus,select:focus,textarea:focus{outline:none;border-color:#7c6af7;box-shadow:0 0 0 3px #7c6af715}"+
 "select option{background:var(--card)}"+
 "label{font-size:10px;font-weight:900;color:var(--lb);letter-spacing:.7px;display:block;margin-bottom:3px;text-transform:uppercase}"+
 /* ── BUTTONS ─────────────────────────────────────────────────────── */
 ".btn{cursor:pointer;border:none;transition:all .15s;font-family:inherit;padding:8px 14px;border-radius:9px;font-weight:800;font-size:12px;letter-spacing:.2px}"+
 ".btn:hover{filter:brightness(1.08);transform:translateY(-1px)}.btn:active{transform:translateY(0)}.btn:disabled{opacity:.4;cursor:default;transform:none}"+
-".btn.primary{background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;box-shadow:0 2px 8px #3b82f640}"+
+".btn.primary{background:#7c6af7;color:#fff;box-shadow:0 2px 8px #7c6af740}"+
 ".btn.secondary{background:var(--gr);color:var(--mt);border:1.5px solid var(--cb)}"+
 ".btn.ok{background:linear-gradient(135deg,#065f46,#047857);color:#34d399}"+
 ".btn.danger{background:linear-gradient(135deg,#450a0a,#7f1d1d);color:#f87171}"+
@@ -379,11 +380,11 @@ const CSS="*{box-sizing:border-box}body{margin:0}"+
 ".dow{text-align:center;font-size:9px;font-weight:900;color:var(--lb);letter-spacing:.8px;padding:2px 0}"+
 ".month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}"+
 ".day-cell{border-radius:9px;background:var(--dy);border:1px solid var(--db);transition:all .1s;cursor:pointer;min-height:82px;padding:4px}"+
-".day-cell:hover{border-color:#3b82f655;background:var(--dh);box-shadow:0 2px 8px rgba(59,130,246,.08)}"+
-".day-cell.today{border-color:#3b82f6;box-shadow:0 0 0 2px #3b82f620}"+
-".day-cell.selected{border-color:#3b82f6;background:var(--na)}"+
+".day-cell:hover{border-color:#7c6af755;background:var(--dh);box-shadow:0 2px 8px rgba(124,106,247,.08)}"+
+".day-cell.today{border-color:#7c6af7;box-shadow:0 0 0 2px #7c6af720}"+
+".day-cell.selected{border-color:#7c6af7;background:var(--na)}"+
 ".day-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}"+
-".day-num{font-size:11px;font-weight:800;color:#3b82f6}"+
+".day-num{font-size:11px;font-weight:800;color:#7c6af7}"+
 /* ── GRID TABLES ─────────────────────────────────────────────────── */
 ".grid-header,.grid-row{display:grid;gap:7px;padding:9px 14px;align-items:center}"+
 ".grid-header{border-bottom:1px solid var(--fc);font-size:10px;font-weight:900;color:var(--lb);letter-spacing:.7px;background:var(--sx)}"+
@@ -394,14 +395,14 @@ const CSS="*{box-sizing:border-box}body{margin:0}"+
 ".tab-bar{display:flex;gap:3px;margin-bottom:12px;border-bottom:1px solid var(--fc);padding-bottom:7px;flex-wrap:wrap}"+
 ".tab-btn{padding:5px 11px;border-radius:6px;border:none;font-family:inherit;font-size:11px;cursor:pointer;transition:all .12s;font-weight:700}"+
 ".upload-zone{border:2px dashed var(--up);border-radius:10px;padding:14px;text-align:center;cursor:pointer;color:var(--mt);transition:.15s;font-size:12px}"+
-".upload-zone:hover{border-color:#3b82f6;color:#60a5fa;background:#3b82f608}"+
-".file-chip{display:inline-flex;align-items:center;gap:3px;background:#1d4ed820;color:#60a5fa;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:700;margin:2px}"+
+".upload-zone:hover{border-color:#7c6af7;color:#a78bfa;background:#7c6af708}"+
+".file-chip{display:inline-flex;align-items:center;gap:3px;background:#7c6af720;color:#a78bfa;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:700;margin:2px}"+
 /* ── TOAST ───────────────────────────────────────────────────────── */
 ".toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:10px;font-weight:800;font-size:13px;z-index:999;animation:slideUp .25s ease;white-space:nowrap;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.25);backdrop-filter:blur(8px)}"+
 "@keyframes slideUp{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}"+
 /* ── FAB CHAMADO ─────────────────────────────────────────────────── */
-".fab-chamado{position:fixed;right:20px;bottom:20px;z-index:50;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1d4ed8,#4f46e5);border:none;color:#fff;cursor:pointer;box-shadow:0 4px 20px #3b82f660;display:flex;align-items:center;justify-content:center;font-size:22px;transition:all .2s;animation:fabPop .3s ease}"+
-".fab-chamado:hover{transform:scale(1.1) translateY(-2px);box-shadow:0 8px 30px #3b82f680}"+
+".fab-chamado{position:fixed;right:20px;bottom:20px;z-index:50;width:52px;height:52px;border-radius:50%;background:#7c6af7;border:none;color:#fff;cursor:pointer;box-shadow:0 4px 20px #7c6af760;display:flex;align-items:center;justify-content:center;font-size:22px;transition:all .2s;animation:fabPop .3s ease}"+
+".fab-chamado:hover{transform:scale(1.1) translateY(-2px);box-shadow:0 8px 30px #7c6af780}"+
 ".fab-chamado:active{transform:scale(.96)}"+
 "@keyframes fabPop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}"+
 "@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 #ef444450}50%{box-shadow:0 0 0 7px #ef444415}}"+
@@ -509,20 +510,20 @@ function AlertPanel({alertas,setAlertas,pacientes,profissionais,agenda,auth,open
 
         {/* ── Reuniões próximas ── */}
         {reunioesPendentes.length>0&&<div style={{marginBottom:8}}>
-          <div style={{fontSize:10,fontWeight:900,color:"#3b82f6",textTransform:"uppercase",letterSpacing:.6,marginBottom:6,display:"flex",alignItems:"center",gap:6}}>
-            🤝 Reuniões <span style={{background:"#3b82f6",color:"#fff",borderRadius:20,padding:"0 6px",fontSize:9,fontWeight:900}}>{reunioesPendentes.length}</span>
+          <div style={{fontSize:10,fontWeight:900,color:"#7c6af7",textTransform:"uppercase",letterSpacing:.6,marginBottom:6,display:"flex",alignItems:"center",gap:6}}>
+            🤝 Reuniões <span style={{background:"#7c6af7",color:"#fff",borderRadius:20,padding:"0 6px",fontSize:9,fontWeight:900}}>{reunioesPendentes.length}</span>
           </div>
           {reunioesPendentes.map(ag=>{
             const diffD=Math.round((new Date(ag.data+"T12:00:00")-new Date(hj+"T12:00:00"))/(1000*60*60*24));
             const isHoje=diffD===0;
             const isAmanha=diffD===1;
-            const cor=isHoje?"#3b82f6":isAmanha?"#60a5fa":"#94a3b8";
+            const cor=isHoje?"#7c6af7":isAmanha?"#a78bfa":"#94a3b8";
             const label=isHoje?"Hoje":isAmanha?"Amanhã":"Em "+diffD+" dias";
             const nPart=(ag.participantesIds||[]).length;
-            return(<div key={ag.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:9,background:isHoje?"#3b82f615":"var(--sx)",border:"1px solid "+(isHoje?"#3b82f640":"var(--sc)"),marginBottom:5}}>
+            return(<div key={ag.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:9,background:isHoje?"#7c6af715":"var(--sx)",border:"1px solid "+(isHoje?"#7c6af740":"var(--sc)"),marginBottom:5}}>
               <span style={{fontSize:16,marginTop:1}}>🤝</span>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:800,fontSize:12,color:isHoje?"#60a5fa":"var(--tx)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ag.tituloReuniao||"Reunião"}</div>
+                <div style={{fontWeight:800,fontSize:12,color:isHoje?"#a78bfa":"var(--tx)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ag.tituloReuniao||"Reunião"}</div>
                 <div style={{fontSize:10,color:"var(--mt)",marginTop:1}}>{brDate(ag.data)} às {ag.horarioSessao}{ag.horarioFimSessao?" – "+ag.horarioFimSessao:""}{nPart>0?" · "+nPart+" participante(s)":""}</div>
                 {ag.pautaReuniao&&<div style={{fontSize:9,color:"var(--mt)",marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>📋 {ag.pautaReuniao}</div>}
               </div>
@@ -535,17 +536,17 @@ function AlertPanel({alertas,setAlertas,pacientes,profissionais,agenda,auth,open
         {alertas.length===0&&anivTodos.length===0&&reunioesPendentes.length===0&&<div style={{textAlign:"center",color:"var(--mt)",padding:"30px 0",fontSize:12}}>Sem alertas.</div>}
         {alertas.length===0&&anivTodos.length>0&&null}
         {alertas.map(a=>(
-          <div key={a.id} style={{padding:"9px 12px",borderRadius:10,background:a.lido?"var(--sx)":"var(--na)",border:"1px solid "+(a.lido?"var(--sc)":"#3b82f640"),transition:".15s"}}>
+          <div key={a.id} style={{padding:"9px 12px",borderRadius:10,background:a.lido?"var(--sx)":"var(--na)",border:"1px solid "+(a.lido?"var(--sc)":"#7c6af740"),transition:".15s"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6}}>
               <div style={{fontWeight:800,fontSize:12,color:a.lido?"var(--mt)":"var(--tx)",flex:1}}>{a.titulo}</div>
               <div style={{display:"flex",gap:3,flexShrink:0}}>
-                {!a.lido&&<span style={{padding:"1px 6px",borderRadius:20,fontSize:9,fontWeight:900,background:"#3b82f6",color:"#fff"}}>NOVO</span>}
+                {!a.lido&&<span style={{padding:"1px 6px",borderRadius:20,fontSize:9,fontWeight:900,background:"#7c6af7",color:"#fff"}}>NOVO</span>}
                 <button onClick={()=>abrirEditar(a)} style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--mt)",fontSize:12,padding:"0 2px"}} title="Editar">✏️</button>
                 <button onClick={()=>deletar(a.id)} style={{background:"transparent",border:"none",cursor:"pointer",color:"#f87171",fontSize:12,padding:"0 2px"}} title="Excluir">🗑️</button>
               </div>
             </div>
             <div style={{fontSize:11,color:"var(--mt)",marginTop:3,lineHeight:1.4}}>{a.descricao}</div>
-            {!a.lido&&<button onClick={()=>setAlertas(arr=>arr.map(x=>x.id===a.id?{...x,lido:true}:x))} style={{marginTop:5,fontSize:10,color:"#60a5fa",background:"transparent",border:"none",cursor:"pointer",fontWeight:700,padding:0}}>Marcar como lido</button>}
+            {!a.lido&&<button onClick={()=>setAlertas(arr=>arr.map(x=>x.id===a.id?{...x,lido:true}:x))} style={{marginTop:5,fontSize:10,color:"#a78bfa",background:"transparent",border:"none",cursor:"pointer",fontWeight:700,padding:0}}>Marcar como lido</button>}
           </div>
         ))}
       </div>
@@ -570,7 +571,7 @@ function UploadField({label,value,onChange}){
   const id="upl"+(label||"").replace(/\W/g,"");
   return(<div><label>{label||"Arquivo"}</label>
     <label htmlFor={id} className="upload-zone" style={{display:"block"}}>
-      {value&&value.length?<span style={{color:"#60a5fa"}}>✅ {value.length} arquivo{value.length>1?"s":""}</span>:<span>📎 Clique para selecionar</span>}
+      {value&&value.length?<span style={{color:"#a78bfa"}}>✅ {value.length} arquivo{value.length>1?"s":""}</span>:<span>📎 Clique para selecionar</span>}
     </label>
     <input id={id} type="file" multiple style={{display:"none"}} onChange={e=>{const f=Array.from(e.target.files);onChange&&onChange(f.map(x=>({nome:x.name,tamanho:x.size,url:URL.createObjectURL(x)})));}}/>
     {value&&value.length>0&&<div style={{marginTop:4}}>{value.map((f,i)=><span key={i} className="file-chip">📄 {f.nome}</span>)}</div>}
@@ -668,8 +669,8 @@ function ChamadoButton({setChamados,showToast}){
               {PADRAO_CHAMADO.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}
             </select>
           </div>}
-          {isPadrao&&<div className="section-box" style={{background:"#3b82f608",borderColor:"#3b82f625"}}>
-            <div className="section-title" style={{color:"#60a5fa"}}>📋 {padraoSel.label}</div>
+          {isPadrao&&<div className="section-box" style={{background:"#7c6af708",borderColor:"#7c6af725"}}>
+            <div className="section-title" style={{color:"#a78bfa"}}>📋 {padraoSel.label}</div>
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {padraoSel.campos.map(campo=>(
                 <div key={campo} style={{display:"grid",gridTemplateColumns:"140px 1fr",alignItems:"center",gap:7}}>
@@ -795,7 +796,7 @@ function ReuniaoAtaModal({ag,profissionais,chamados,setChamados,showToast,auth,o
         <div className="stack">
           {/* Info participantes */}
           {participantes.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-            {participantes.map(p=><span key={p.id} style={{padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700,background:"#3b82f615",color:"#60a5fa",border:"1px solid #3b82f630"}}>{p.nome.split(" ")[0]}</span>)}
+            {participantes.map(p=><span key={p.id} style={{padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700,background:"#7c6af715",color:"#a78bfa",border:"1px solid #7c6af730"}}>{p.nome.split(" ")[0]}</span>)}
           </div>}
           {ag.pautaReuniao&&<div style={{background:"#f59e0b08",border:"1px solid #f59e0b20",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#fcd34d"}}>
             <span style={{fontWeight:800,marginRight:6}}>📋 Pauta:</span>{ag.pautaReuniao}
@@ -843,9 +844,9 @@ function ReuniaoAtaModal({ag,profissionais,chamados,setChamados,showToast,auth,o
           <div style={{background:"var(--sx)",borderRadius:10,padding:12,border:"1px solid var(--cb)"}}>
             <div style={{fontWeight:900,fontSize:12,color:"var(--mt)",textTransform:"uppercase",letterSpacing:.5,marginBottom:8}}>🤖 Análise por IA</div>
             {!analise&&!analisando&&<div style={{color:"var(--mt)",fontSize:12,textAlign:"center",padding:"20px 0"}}>
-              Escreva a ata e clique em<br/><b style={{color:"#60a5fa"}}>🤖 Analisar com IA</b><br/>para obter sugestões de chamados.
+              Escreva a ata e clique em<br/><b style={{color:"#a78bfa"}}>🤖 Analisar com IA</b><br/>para obter sugestões de chamados.
             </div>}
-            {analisando&&<div style={{textAlign:"center",padding:"30px 0",color:"#60a5fa",fontSize:13}}>
+            {analisando&&<div style={{textAlign:"center",padding:"30px 0",color:"#a78bfa",fontSize:13}}>
               ⏳ Processando ata com IA...
             </div>}
             {analise&&!analisando&&<>
@@ -878,7 +879,7 @@ function ReuniaoAtaModal({ag,profissionais,chamados,setChamados,showToast,auth,o
                 <div style={{fontSize:10,fontWeight:800,color:"#a78bfa",textTransform:"uppercase",letterSpacing:.5,marginBottom:6}}>📨 Chamados sugeridos ({chamadosSugeridos.length})</div>
                 {chamadosSugeridos.map((ch,i)=>{
                   const sel=chamadosSel.includes(i);
-                  const corPrio=ch.prioridade==="Urgente"?"#ef4444":ch.prioridade==="Alta"?"#f59e0b":ch.prioridade==="Normal"?"#60a5fa":"#94a3b8";
+                  const corPrio=ch.prioridade==="Urgente"?"#ef4444":ch.prioridade==="Alta"?"#f59e0b":ch.prioridade==="Normal"?"#a78bfa":"#94a3b8";
                   return(<div key={i} onClick={()=>toggleChamado(i)}
                     style={{marginBottom:6,padding:"8px 10px",borderRadius:8,border:"1.5px solid "+(sel?"#a78bfa":"var(--cpb)"),
                       background:sel?"#a78bfa12":"transparent",cursor:"pointer",transition:".15s"}}>
@@ -1154,9 +1155,9 @@ function MicBtn({onResult,title,style}){
   if(!suporte)return null;
   return(<div style={{display:"inline-flex",alignItems:"center",gap:6,...style}}>
     <button onClick={toggle} title={ativo?"Parar ditado (clique)":title||"Ditar por voz"}
-      style={{background:ativo?"#ef444415":"transparent",border:"2px solid "+(ativo?"#ef4444":"#3b82f6"),
+      style={{background:ativo?"#ef444415":"transparent",border:"2px solid "+(ativo?"#ef4444":"#7c6af7"),
         borderRadius:20,padding:"4px 12px",cursor:"pointer",fontSize:12,fontWeight:800,
-        color:ativo?"#ef4444":"#3b82f6",display:"flex",alignItems:"center",gap:5,transition:".15s",
+        color:ativo?"#ef4444":"#7c6af7",display:"flex",alignItems:"center",gap:5,transition:".15s",
         animation:ativo?"micPulse 1.2s infinite":undefined}}>
       {ativo?"🔴 Parar":"🎙️ Ditar"}
     </button>
@@ -1197,7 +1198,7 @@ function EvolucaoRapidaModal({ag,pac,prof,profLogado,prontuarios,setProntuarios,
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
           <div>
             <label>📅 Data da Sessão</label>
-            <div style={{padding:"7px 10px",background:"var(--sx)",borderRadius:8,fontSize:13,fontWeight:800,color:"#60a5fa",border:"1px solid #3b82f640"}}>
+            <div style={{padding:"7px 10px",background:"var(--sx)",borderRadius:8,fontSize:13,fontWeight:800,color:"#a78bfa",border:"1px solid #7c6af740"}}>
               {brDate(ag.data)}
             </div>
             <div style={{fontSize:9,color:"var(--mt)",marginTop:2}}>Data da sessão agendada</div>
@@ -1205,8 +1206,8 @@ function EvolucaoRapidaModal({ag,pac,prof,profLogado,prontuarios,setProntuarios,
           <div>
             <label>🕐 Hora Oficial</label>
             <div style={{padding:"7px 10px",background:"var(--sx)",borderRadius:8,fontSize:16,fontWeight:900,
-              color:ag.usarEvolucaoDiferente?"#f59e0b":"#60a5fa",
-              border:"1px solid "+(ag.usarEvolucaoDiferente?"#f59e0b40":"#3b82f640")}}>
+              color:ag.usarEvolucaoDiferente?"#f59e0b":"#a78bfa",
+              border:"1px solid "+(ag.usarEvolucaoDiferente?"#f59e0b40":"#7c6af740")}}>
               {horaOficial}
             </div>
             <div style={{fontSize:9,marginTop:2}}>
@@ -1222,9 +1223,9 @@ function EvolucaoRapidaModal({ag,pac,prof,profLogado,prontuarios,setProntuarios,
             </div>
           </div>
         </div>
-        {modelosDisp.length>0&&<div className="section-box" style={{borderColor:"#3b82f630"}}>
+        {modelosDisp.length>0&&<div className="section-box" style={{borderColor:"#7c6af730"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
-            <div className="section-title" style={{color:"#60a5fa",margin:0}}>🧩 Modelos — {esp}</div>
+            <div className="section-title" style={{color:"#a78bfa",margin:0}}>🧩 Modelos — {esp}</div>
             <button className="btn secondary small" onClick={()=>setModeloAberto(o=>!o)}>{modeloAberto?"▲ Ocultar":"▼ Ver modelos"}</button>
           </div>
           {modeloAberto&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:5}}>
@@ -1335,8 +1336,8 @@ function AgendaModal({auth,profissionais,pacientes,procedimentos,salas,agendamen
         <div style={{display:"flex",gap:8}}>
           {[["sessao","📅 Sessão Clínica"],["reuniao","🤝 Reunião"]].map(([v,l])=>(
             <button key={v} onClick={()=>s({tipo:v})}
-              style={{flex:1,padding:"10px",borderRadius:10,border:"2px solid "+(form.tipo===v?"#3b82f6":"var(--cpb)"),
-                background:form.tipo===v?"#3b82f618":"transparent",color:form.tipo===v?"#60a5fa":"var(--mt)",
+              style={{flex:1,padding:"10px",borderRadius:10,border:"2px solid "+(form.tipo===v?"#7c6af7":"var(--cpb)"),
+                background:form.tipo===v?"#7c6af718":"transparent",color:form.tipo===v?"#a78bfa":"var(--mt)",
                 fontWeight:form.tipo===v?900:500,cursor:"pointer",fontSize:13,transition:".15s"}}>
               {l}
             </button>
@@ -1816,7 +1817,7 @@ function ContratoPdfModal({pessoa, tipo, templateOverride, onClose}) {
 
       {editandoTmpl ? (
         <div className="stack" style={{padding:"0 4px"}}>
-          <div style={{padding:"8px 12px",background:"#3b82f615",borderRadius:8,fontSize:11,color:"#60a5fa",border:"1px solid #3b82f630"}}>
+          <div style={{padding:"8px 12px",background:"#7c6af715",borderRadius:8,fontSize:11,color:"#a78bfa",border:"1px solid #7c6af730"}}>
             💡 Use <code style={{background:"var(--sx)",padding:"1px 4px",borderRadius:3}}>{"{{"+"campo"+"}}"}  </code> para dados automáticos. Ex: <code style={{background:"var(--sx)",padding:"1px 4px",borderRadius:3}}>{"{{"+"nome"+"}}"}</code> <code style={{background:"var(--sx)",padding:"1px 4px",borderRadius:3}}>{"{{"+"convenio"+"}}"}</code> <code style={{background:"var(--sx)",padding:"1px 4px",borderRadius:3}}>{"{{"+"resp1Nome"+"}}"}</code>
           </div>
           <div><label>Modelo de Contrato (template base)</label>
@@ -1861,7 +1862,7 @@ function CadastroPacienteModal({editing,pacientes,onClose,onSave}){
   return(<div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal" style={{width:660,maxHeight:"90vh",overflowY:"auto"}}>
       <div className="modal-head"><h2>{editing?"✏️ Editar":"👤 Novo"} Paciente</h2><button className="icon-btn" onClick={onClose}>×</button></div>
-      <div className="tab-bar">{TABS.map(([k,l])=><button key={k} className="btn tab-btn" onClick={()=>setTab(k)} style={{background:tab===k?"var(--na)":"transparent",color:tab===k?"#3b82f6":"var(--mt)",fontWeight:tab===k?800:500}}>{l}</button>)}</div>
+      <div className="tab-bar">{TABS.map(([k,l])=><button key={k} className="btn tab-btn" onClick={()=>setTab(k)} style={{background:tab===k?"var(--na)":"transparent",color:tab===k?"#7c6af7":"var(--mt)",fontWeight:tab===k?800:500}}>{l}</button>)}</div>
       <div className="stack">
         {tab==="dados"&&<>
           <div><label>Nome Completo *</label><input value={form.nome} onChange={e=>sf({nome:e.target.value})} autoFocus/></div>
@@ -1980,7 +1981,7 @@ function CadastroProfissionalModal({editing,profissionais,filiais,onClose,onSave
   return(<div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal" style={{width:760,maxHeight:"90vh",overflowY:"auto"}}>
       <div className="modal-head"><h2>{editing?"✏️ Editar":"🩺 Novo"} Profissional</h2><button className="icon-btn" onClick={onClose}>×</button></div>
-      <div className="tab-bar">{TABS.map(([k,l])=><button key={k} className="btn tab-btn" onClick={()=>setTab(k)} style={{background:tab===k?"var(--na)":"transparent",color:tab===k?"#3b82f6":"var(--mt)",fontWeight:tab===k?800:500}}>{l}</button>)}</div>
+      <div className="tab-bar">{TABS.map(([k,l])=><button key={k} className="btn tab-btn" onClick={()=>setTab(k)} style={{background:tab===k?"var(--na)":"transparent",color:tab===k?"#7c6af7":"var(--mt)",fontWeight:tab===k?800:500}}>{l}</button>)}</div>
       <div className="stack">
         {tab==="dados"&&<>
           <div><label>Nome *</label><input value={form.nome} onChange={e=>sf({nome:e.target.value})} autoFocus/></div>
@@ -1999,7 +2000,7 @@ function CadastroProfissionalModal({editing,profissionais,filiais,onClose,onSave
             <div className="chips">{ESPECIALIDADES_LIST.map(e=>{const sel=form.especialidades.includes(e);const cor=espCor(e);return(<button key={e} className="chip-btn" onClick={()=>toggleEsp(e)} style={{background:sel?cor+"22":"transparent",color:sel?cor:"var(--mt)",borderColor:sel?cor:"var(--cpb)",fontWeight:sel?800:400}}>{sel?"✓ ":""}{e}</button>);})}</div>
           </div>
           <div><label>Tempos de Sessão</label>
-            <div className="chips">{TEMPOS_SESSAO.map(t=>{const sel=form.temposAtendimento.includes(t);return(<button key={t} className="chip-btn" onClick={()=>toggleTempo(t)} style={{background:sel?"#3b82f622":"transparent",color:sel?"#60a5fa":"var(--mt)",borderColor:sel?"#3b82f6":"var(--cpb)",fontWeight:sel?800:400}}>{sel?"✓ ":""}{t} min</button>);})}</div>
+            <div className="chips">{TEMPOS_SESSAO.map(t=>{const sel=form.temposAtendimento.includes(t);return(<button key={t} className="chip-btn" onClick={()=>toggleTempo(t)} style={{background:sel?"#7c6af722":"transparent",color:sel?"#a78bfa":"var(--mt)",borderColor:sel?"#7c6af7":"var(--cpb)",fontWeight:sel?800:400}}>{sel?"✓ ":""}{t} min</button>);})}</div>
           </div>
           <div><label>Convênios atendidos</label>
             <div className="chips">{CONVENIOS_LIST.map(c=>{const sel=(form.conveniosAtendidos||[]).includes(c);return(<button key={c} className="chip-btn" onClick={()=>sf({conveniosAtendidos:sel?form.conveniosAtendidos.filter(x=>x!==c):[...(form.conveniosAtendidos||[]),c]})} style={{background:sel?"#10b98122":"transparent",color:sel?"#34d399":"var(--mt)",borderColor:sel?"#10b981":"var(--cpb)",fontWeight:sel?800:400}}>{sel?"✓ ":""}{c}</button>);})}</div>
@@ -2015,8 +2016,8 @@ function CadastroProfissionalModal({editing,profissionais,filiais,onClose,onSave
           <div><label>Informações Importantes</label><textarea rows={2} value={form.infoImportantes||""} onChange={e=>sf({infoImportantes:e.target.value})} placeholder="Tipagem sanguínea, alergias, medicamentos..."/></div>
         </>}
         {tab==="usuario"&&<div className="stack">
-          <div className="section-box" style={{borderColor:"#3b82f630"}}>
-            <div className="section-title" style={{color:"#60a5fa"}}>Credenciais de Acesso</div>
+          <div className="section-box" style={{borderColor:"#7c6af730"}}>
+            <div className="section-title" style={{color:"#a78bfa"}}>Credenciais de Acesso</div>
             <div className="g2">
               <div>
                 <label>CPF (usuario) *</label>
@@ -2072,7 +2073,7 @@ function CadastroProfissionalModal({editing,profissionais,filiais,onClose,onSave
               return(<div key={dia} style={{display:"grid",gridTemplateColumns:"120px 1fr 1fr 80px 80px auto",gap:6,alignItems:"center",marginBottom:4}}>
                 <label style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",textTransform:"none",fontSize:12}}>
                   <input type="checkbox" checked={!!esc.ativo} onChange={()=>upd({ativo:!esc.ativo})}/>
-                  <span style={{color:esc.ativo?"#60a5fa":"var(--mt)",fontWeight:esc.ativo?700:400}}>{dia}</span>
+                  <span style={{color:esc.ativo?"#a78bfa":"var(--mt)",fontWeight:esc.ativo?700:400}}>{dia}</span>
                 </label>
                 <input type="time" disabled={!esc.ativo} value={esc.inicio} onChange={e=>upd({inicio:e.target.value})} style={{opacity:esc.ativo?1:0.3}}/>
                 <input type="time" disabled={!esc.ativo} value={esc.fim} onChange={e=>upd({fim:e.target.value})} style={{opacity:esc.ativo?1:0.3}}/>
@@ -2086,7 +2087,7 @@ function CadastroProfissionalModal({editing,profissionais,filiais,onClose,onSave
         {tab==="filiais"&&<>
           <div className="section-box">
             <div className="section-title">🏢 Filiais de Atendimento</div>
-            <div className="chips">{filiais.map(f=>{const sel=(form.filiaisAtendimento||[]).includes(f.id);return(<button key={f.id} className="chip-btn" onClick={()=>toggleFilialAt(f.id)} style={{background:sel?"#3b82f622":"transparent",color:sel?"#60a5fa":"var(--mt)",borderColor:sel?"#3b82f6":"var(--cpb)",fontWeight:sel?800:400}}>{sel?"✓ ":""}{f.nome}</button>);})}</div>
+            <div className="chips">{filiais.map(f=>{const sel=(form.filiaisAtendimento||[]).includes(f.id);return(<button key={f.id} className="chip-btn" onClick={()=>toggleFilialAt(f.id)} style={{background:sel?"#7c6af722":"transparent",color:sel?"#a78bfa":"var(--mt)",borderColor:sel?"#7c6af7":"var(--cpb)",fontWeight:sel?800:400}}>{sel?"✓ ":""}{f.nome}</button>);})}</div>
           </div>
           <div className="section-box">
             <div className="section-title">🔑 Filiais de Acesso</div>
@@ -2108,8 +2109,8 @@ function CadastroProfissionalModal({editing,profissionais,filiais,onClose,onSave
         </>}
         {tab==="docs"&&<>
           {/* ── Carimbo do Profissional ── */}
-          <div className="section-box" style={{borderColor:"#3b82f630"}}>
-            <div className="section-title" style={{color:"#60a5fa"}}>🔏 Carimbo do Profissional</div>
+          <div className="section-box" style={{borderColor:"#7c6af730"}}>
+            <div className="section-title" style={{color:"#a78bfa"}}>🔏 Carimbo do Profissional</div>
             <div className="helper" style={{marginBottom:10}}>
               Imagem do carimbo que aparecerá no prontuário ao registrar evoluções. O sistema removerá automaticamente o fundo branco, deixando transparente.
             </div>
@@ -2151,7 +2152,7 @@ function CadastroProfissionalModal({editing,profissionais,filiais,onClose,onSave
                     <button className="btn secondary" style={{fontSize:11,color:"#f87171",borderColor:"#f87171"}} onClick={()=>sf({carimbo:null})}>🗑️ Remover</button>
                   </div>
                 </div>
-              : <label style={{display:"inline-flex",alignItems:"center",gap:8,cursor:"pointer",padding:"10px 16px",background:"var(--sx)",border:"2px dashed #3b82f660",borderRadius:10,fontSize:12,color:"#60a5fa",fontWeight:700}}>
+              : <label style={{display:"inline-flex",alignItems:"center",gap:8,cursor:"pointer",padding:"10px 16px",background:"var(--sx)",border:"2px dashed #7c6af760",borderRadius:10,fontSize:12,color:"#a78bfa",fontWeight:700}}>
                   📁 Selecionar imagem do carimbo
                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                     const file=e.target.files[0];if(!file)return;
@@ -2225,7 +2226,7 @@ function HistoricoProntuario({evs,agenda,paciente,profissionais}){
       const horaIni=usouAlt?agRef.horaEvolucao:(agRef?.horarioSessao||ev.horaEvolucao||"—");
       const horaFim=agRef?.horarioFimSessao||"";
       return(
-        "<div style='border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:14px;border-left:4px solid #3b82f6'>"+
+        "<div style='border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:14px;border-left:4px solid #7c6af7'>"+
         "<div style='display:flex;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px'>"+
         "<div>"+
         "<span style='font-weight:900;color:#1e40af;font-size:15px'>"+brDate(ev.dataEvolucao)+"</span>"+
@@ -2280,7 +2281,7 @@ function HistoricoProntuario({evs,agenda,paciente,profissionais}){
       <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"flex-end",paddingBottom:1}}>
         {[["30d","30 dias",subMes(1),hoje_str],["3m","3 meses",subMes(3),hoje_str],["6m","6 meses",subMes(6),hoje_str],["1a","1 ano",subMes(12),hoje_str],["tudo","Tudo","",""]].map(([k,l,ini,fim])=>(
           <button key={k} className="btn secondary small"
-            style={{fontSize:10,background:(periodoIni===ini&&periodoFim===fim)?"#3b82f622":"transparent",color:(periodoIni===ini&&periodoFim===fim)?"#60a5fa":"var(--mt)",border:"1px solid var(--cpb)"}}
+            style={{fontSize:10,background:(periodoIni===ini&&periodoFim===fim)?"#7c6af722":"transparent",color:(periodoIni===ini&&periodoFim===fim)?"#a78bfa":"var(--mt)",border:"1px solid var(--cpb)"}}
             onClick={()=>{setPeriodoIni(ini);setPeriodoFim(fim);}}>{l}</button>
         ))}
       </div>
@@ -2296,7 +2297,7 @@ function HistoricoProntuario({evs,agenda,paciente,profissionais}){
       ?<div className="muted" style={{textAlign:"center",padding:20}}>Nenhuma evolução no período.</div>
       :evsFiltr.map(ev=>{
         const evProf=profissionais.find(p=>p.id===Number(ev.profId));
-        const cor=espCor(ev.especialidade||"")||"#3b82f6";
+        const cor=espCor(ev.especialidade||"")||"#7c6af7";
         const agRef=(agenda||[]).find(a=>a.id===ev.agId);
         const usouAlt=agRef?.usarEvolucaoDiferente&&agRef?.horaEvolucao;
         const horaIni=usouAlt?agRef.horaEvolucao:(agRef?.horarioSessao||ev.horaEvolucao||"—");
@@ -2306,7 +2307,7 @@ function HistoricoProntuario({evs,agenda,paciente,profissionais}){
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:8,flexWrap:"wrap",gap:6}}>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
               <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                <span style={{fontWeight:900,fontSize:15,color:"#60a5fa"}}>{brDate(ev.dataEvolucao)}</span>
+                <span style={{fontWeight:900,fontSize:15,color:"#a78bfa"}}>{brDate(ev.dataEvolucao)}</span>
                 <div style={{display:"flex",alignItems:"center",gap:5,background:"var(--sx)",padding:"3px 10px",borderRadius:20,border:"1px solid var(--sc)"}}>
                   <span style={{fontSize:12,fontWeight:800,color:usouAlt?"#f59e0b":"#e2e8f0"}}>🕐 {horaIni}</span>
                   {horaFim&&<>
@@ -2398,7 +2399,7 @@ function ProntuarioModal({paciente,agenda,profissionais,procedimentos,prontuario
   };
 
   const tabBtn=(key,label)=>(
-    <button className="btn tab-btn" onClick={()=>setTab(key)} style={{background:tab===key?"var(--na)":"transparent",color:tab===key?"#3b82f6":"var(--mt)",fontWeight:tab===key?800:500}}>{label}</button>
+    <button className="btn tab-btn" onClick={()=>setTab(key)} style={{background:tab===key?"var(--na)":"transparent",color:tab===key?"#7c6af7":"var(--mt)",fontWeight:tab===key?800:500}}>{label}</button>
   );
 
   return(<div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
@@ -2424,8 +2425,8 @@ function ProntuarioModal({paciente,agenda,profissionais,procedimentos,prontuario
       {tab==="nova"&&podeEvRole&&<div className="stack">
 
         {/* ── Vincular à sessão agendada ── */}
-        <div className="section-box" style={{borderColor:"#3b82f630",background:"var(--na)"}}>
-          <div className="section-title" style={{color:"#60a5fa",marginBottom:6}}>📅 Sessão de Referência</div>
+        <div className="section-box" style={{borderColor:"#7c6af730",background:"var(--na)"}}>
+          <div className="section-title" style={{color:"#a78bfa",marginBottom:6}}>📅 Sessão de Referência</div>
           <select value={nova.agId} onChange={e=>selecionarSessao(e.target.value)}>
             <option value="">— Selecione a sessão (opcional) —</option>
             {agsPac.slice(0,20).map(ag=>{
@@ -2444,7 +2445,7 @@ function ProntuarioModal({paciente,agenda,profissionais,procedimentos,prontuario
           {nova.agId&&!bloqueadoPorProf&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginTop:8}}>
             <div>
               <label>📅 Data Oficial</label>
-              <div style={{padding:"7px 10px",background:"var(--sx)",borderRadius:8,fontSize:13,fontWeight:800,color:"#60a5fa",border:"1px solid #3b82f640",letterSpacing:.3}}>
+              <div style={{padding:"7px 10px",background:"var(--sx)",borderRadius:8,fontSize:13,fontWeight:800,color:"#a78bfa",border:"1px solid #7c6af740",letterSpacing:.3}}>
                 {brDate(nova.dataEvolucao)||"—"}
               </div>
               <div style={{fontSize:9,color:"var(--mt)",marginTop:3}}>
@@ -2453,7 +2454,7 @@ function ProntuarioModal({paciente,agenda,profissionais,procedimentos,prontuario
             </div>
             <div>
               <label>🕐 Hora Oficial</label>
-              <div style={{padding:"7px 10px",background:"var(--sx)",borderRadius:8,fontSize:16,fontWeight:900,color:agSelecionado?.usarEvolucaoDiferente?"#f59e0b":"#60a5fa",border:"1px solid "+(agSelecionado?.usarEvolucaoDiferente?"#f59e0b40":"#3b82f640"),letterSpacing:.5}}>
+              <div style={{padding:"7px 10px",background:"var(--sx)",borderRadius:8,fontSize:16,fontWeight:900,color:agSelecionado?.usarEvolucaoDiferente?"#f59e0b":"#a78bfa",border:"1px solid "+(agSelecionado?.usarEvolucaoDiferente?"#f59e0b40":"#7c6af740"),letterSpacing:.5}}>
                 {nova.horaEvolucao||"—"}
               </div>
               <div style={{fontSize:9,color:"var(--mt)",marginTop:3}}>
@@ -2464,7 +2465,7 @@ function ProntuarioModal({paciente,agenda,profissionais,procedimentos,prontuario
             </div>
             <div>
               <label>👤 Prof. Responsável</label>
-              <div style={{padding:"7px 10px",background:"var(--sx)",borderRadius:8,fontSize:12,fontWeight:700,color:profResp?"#60a5fa":"var(--mt)",border:"1px solid var(--cb)"}}>
+              <div style={{padding:"7px 10px",background:"var(--sx)",borderRadius:8,fontSize:12,fontWeight:700,color:profResp?"#a78bfa":"var(--mt)",border:"1px solid var(--cb)"}}>
                 {profResp?profResp.nome:(profissionais.find(p=>p.id===Number(agSelecionado?.profissionalId))?.nome||"—")}
               </div>
             </div>
@@ -2486,9 +2487,9 @@ function ProntuarioModal({paciente,agenda,profissionais,procedimentos,prontuario
               </select>
             </div>
           </div>
-          {modelosDisp.length>0&&<div className="section-box" style={{borderColor:"#3b82f630"}}>
+          {modelosDisp.length>0&&<div className="section-box" style={{borderColor:"#7c6af730"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
-              <div className="section-title" style={{color:"#60a5fa",margin:0}}>🧩 Modelos — {espEvolucao}</div>
+              <div className="section-title" style={{color:"#a78bfa",margin:0}}>🧩 Modelos — {espEvolucao}</div>
               <button className="btn secondary small" onClick={()=>setModeloAberto(o=>!o)}>{modeloAberto?"▲ Ocultar":"▼ Ver modelos"}</button>
             </div>
             {modeloAberto&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(195px,1fr))",gap:6}}>
@@ -2599,8 +2600,8 @@ function FichaPacienteView({paciente}){
       <div style={{fontSize:12,color:"var(--tx)"}}>{p.infoImportantes}</div>
     </div>}
     {/* Termo de ciência */}
-    <div className="section-box" style={{borderColor:"#3b82f640"}}>
-      <div className="section-title" style={{color:"#60a5fa"}}>📃 Termo de Ciência</div>
+    <div className="section-box" style={{borderColor:"#7c6af740"}}>
+      <div className="section-title" style={{color:"#a78bfa"}}>📃 Termo de Ciência</div>
       <div style={{fontSize:12,lineHeight:1.7,color:"var(--tx)"}}>
         Eu, <b>{p.resp1Nome||p.nome}</b>, responsável pelo(a) paciente <b>{p.nome}</b>, declaro que fui devidamente informado(a) sobre o tratamento proposto pelo <b>{NOME_CLINICA}</b>, incluindo objetivos, metodologias e periodicidade dos atendimentos. Estou ciente das políticas de cancelamento, reagendamento e faltas da clínica, bem como das condições de cobertura do meu convênio (<b>{p.convenio||"Particular"}</b>).
       </div>
@@ -2837,7 +2838,7 @@ function ComissaoProntuariosModal({prontuarios,setProntuarios,pacientes,profissi
           <input value={busca} onChange={e=>setBusca(e.target.value)} placeholder="🔍 Paciente ou profissional..." style={{width:"100%",fontSize:11,marginBottom:6}}/>
           <div style={{display:"flex",gap:4,marginBottom:6,flexWrap:"wrap"}}>
             {["todos","pendente","ok","alerta","erro"].map(s=>(
-              <button key={s} onClick={()=>{setFiltroStatus(s);setFilaIdx(0);}} style={{padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:800,border:"1.5px solid "+(filtroStatus===s?"#3b82f6":"var(--cpb)"),background:filtroStatus===s?"#3b82f620":"transparent",color:filtroStatus===s?"#60a5fa":"var(--mt)",cursor:"pointer",textTransform:"capitalize"}}>{s}</button>
+              <button key={s} onClick={()=>{setFiltroStatus(s);setFilaIdx(0);}} style={{padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:800,border:"1.5px solid "+(filtroStatus===s?"#7c6af7":"var(--cpb)"),background:filtroStatus===s?"#7c6af720":"transparent",color:filtroStatus===s?"#a78bfa":"var(--mt)",cursor:"pointer",textTransform:"capitalize"}}>{s}</button>
             ))}
           </div>
           <select value={filtroProf} onChange={e=>{setFiltroProf(e.target.value);setFilaIdx(0);}} style={{width:"100%",fontSize:11,marginBottom:8}}>
@@ -2857,7 +2858,7 @@ function ComissaoProntuariosModal({prontuarios,setProntuarios,pacientes,profissi
             const r=resultados[ev.id];
             const isAtiva=i===filaIdx;
             return(<div key={ev.id} onClick={()=>setFilaIdx(i)}
-              style={{padding:"10px 14px",borderBottom:"1px solid var(--sc)",cursor:"pointer",background:isAtiva?"var(--na)":"",borderLeft:isAtiva?"3px solid #3b82f6":"3px solid transparent",transition:".1s"}}>
+              style={{padding:"10px 14px",borderBottom:"1px solid var(--sc)",cursor:"pointer",background:isAtiva?"var(--na)":"",borderLeft:isAtiva?"3px solid #7c6af7":"3px solid transparent",transition:".1s"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6}}>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontWeight:800,fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pac?.nome||"—"}</div>
@@ -2865,7 +2866,7 @@ function ComissaoProntuariosModal({prontuarios,setProntuarios,pacientes,profissi
                   <div style={{fontSize:10,color:espCor(ev.especialidade||""),fontWeight:700,marginTop:1}}>{ev.especialidade||"—"}</div>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3,flexShrink:0}}>
-                  {r?.loading?<span style={{fontSize:10,color:"#60a5fa"}}>⏳</span>:statusBadge(r?.status)}
+                  {r?.loading?<span style={{fontSize:10,color:"#a78bfa"}}>⏳</span>:statusBadge(r?.status)}
                   {r?.pontuacao!=null&&!r.loading&&<span style={{fontSize:9,color:"var(--mt)",fontWeight:700}}>{r.pontuacao}/100</span>}
                 </div>
               </div>
@@ -2888,7 +2889,7 @@ function ComissaoProntuariosModal({prontuarios,setProntuarios,pacientes,profissi
                   <div style={{fontSize:12,color:"var(--mt)",marginTop:2}}>{pacAtual?.convenio||"Particular"} · {pacAtual?.nascimento?brDate(pacAtual.nascimento):""}</div>
                 </div>
                 <div style={{textAlign:"right"}}>
-                  <div style={{fontWeight:800,color:"#60a5fa",fontSize:13}}>{brDate(evAtual.dataEvolucao||"")} às {evAtual.horaEvolucao||"—"}</div>
+                  <div style={{fontWeight:800,color:"#a78bfa",fontSize:13}}>{brDate(evAtual.dataEvolucao||"")} às {evAtual.horaEvolucao||"—"}</div>
                   <div style={{fontSize:11,color:espCor(evAtual.especialidade||""),fontWeight:700,marginTop:2}}>{profAtual?.nome||"—"} · {evAtual.especialidade||"—"}</div>
                   {agRef&&<div style={{fontSize:10,color:"var(--mt)",marginTop:1}}>📅 Sessão: {brDate(agRef.data)} {agRef.horarioSessao}</div>}
                 </div>
@@ -2909,7 +2910,7 @@ function ComissaoProntuariosModal({prontuarios,setProntuarios,pacientes,profissi
             {!resultados[evAtual.id]&&<button className="btn primary" style={{width:"100%",marginBottom:14}} onClick={()=>analisarEvolucao(evAtual)}>
               🤖 Analisar esta evolução com IA
             </button>}
-            {resultados[evAtual.id]?.loading&&<div style={{textAlign:"center",padding:"20px",color:"#60a5fa",fontSize:13}}>
+            {resultados[evAtual.id]?.loading&&<div style={{textAlign:"center",padding:"20px",color:"#a78bfa",fontSize:13}}>
               ⏳ Analisando com IA...
             </div>}
 
@@ -2944,8 +2945,8 @@ function ComissaoProntuariosModal({prontuarios,setProntuarios,pacientes,profissi
 
                 {/* Sugestões */}
                 {r.sugestoes?.length>0&&<div style={{marginBottom:10}}>
-                  <div style={{fontSize:11,fontWeight:900,color:"#60a5fa",marginBottom:6,textTransform:"uppercase",letterSpacing:.5}}>💡 Sugestões</div>
-                  {r.sugestoes.map((s,i)=><div key={i} style={{padding:"6px 10px",background:"#0c1a2e",border:"1px solid #3b82f630",borderRadius:7,fontSize:12,color:"#93c5fd",marginBottom:4}}>• {s}</div>)}
+                  <div style={{fontSize:11,fontWeight:900,color:"#a78bfa",marginBottom:6,textTransform:"uppercase",letterSpacing:.5}}>💡 Sugestões</div>
+                  {r.sugestoes.map((s,i)=><div key={i} style={{padding:"6px 10px",background:"#0c1a2e",border:"1px solid #7c6af730",borderRadius:7,fontSize:12,color:"#93c5fd",marginBottom:4}}>• {s}</div>)}
                 </div>}
 
                 <button className="btn secondary" style={{width:"100%",marginTop:4,fontSize:11}} onClick={()=>analisarEvolucao(evAtual)}>🔄 Reanalisar</button>
@@ -2979,7 +2980,7 @@ function PacientesPage({pacientes,setPacientes,setChamados,showToast,auth,agenda
     </div></div>
     {viewPac==="list"&&<div style={{borderRadius:10,overflow:"hidden",border:"1px solid var(--sc)",marginBottom:10}}>
       <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 90px",background:"var(--sx)",padding:"7px 12px",fontSize:10,fontWeight:900,color:"var(--mt)",letterSpacing:.5,gap:8}}><div>PACIENTE</div><div>CONVÊNIO</div><div>CELULAR</div><div>CIDADE</div><div></div></div>
-      {filtered.map(p=>{const nEv=(prontuarios||[]).filter(pr=>pr.pacienteId===p.id).length;const cor=p.convenio==="Particular"?"#4ade80":"#60a5fa";
+      {filtered.map(p=>{const nEv=(prontuarios||[]).filter(pr=>pr.pacienteId===p.id).length;const cor=p.convenio==="Particular"?"#4ade80":"#a78bfa";
         return(<div key={p.id} style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 90px",padding:"9px 12px",borderTop:"1px solid var(--sc)",gap:8,alignItems:"center",cursor:podeEditar?"pointer":"default"}} onClick={()=>podeEditar&&(setEditing(p),setModal(true))}>
           <div><div style={{fontWeight:800,fontSize:12}}>{p.nome}</div><div style={{fontSize:10,color:"var(--mt)"}}>{p.nascimento&&brDate(p.nascimento)}{p.cpf&&" · "+maskCPF(p.cpf)}</div></div>
           <div><span style={{padding:"1px 6px",borderRadius:20,fontSize:10,fontWeight:800,background:cor+"20",color:cor}}>{p.convenio||"Particular"}</span></div>
@@ -2993,7 +2994,7 @@ function PacientesPage({pacientes,setPacientes,setChamados,showToast,auth,agenda
       {filtered.length===0&&<div style={{padding:"24px",textAlign:"center",color:"var(--mt)"}}>Nenhum paciente encontrado.</div>}
     </div>}
     <div style={{display:viewPac==="grid"?"grid":"none",gridTemplateColumns:"repeat(auto-fill,minmax(290px,1fr))",gap:10}}>
-      {filtered.map(p=>{const nEv=(prontuarios||[]).filter(pr=>pr.pacienteId===p.id).length;const cor=p.convenio==="Particular"?"#4ade80":"#60a5fa";
+      {filtered.map(p=>{const nEv=(prontuarios||[]).filter(pr=>pr.pacienteId===p.id).length;const cor=p.convenio==="Particular"?"#4ade80":"#a78bfa";
         return(<div key={p.id} className="card" style={{padding:13,borderLeft:"3px solid "+cor}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
             <div style={{flex:1,minWidth:0}}>
@@ -3044,7 +3045,7 @@ function TiposUsuarioInline({auth}){
         <div key={t.role} className="card" style={{padding:14,borderLeft:"4px solid "+tCor}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
             <div><div style={{fontWeight:900,fontSize:13}}>{t.label}</div>
-              <code style={{fontSize:10,color:"#60a5fa",background:"var(--sx)",padding:"1px 5px",borderRadius:4}}>{t.role}</code>
+              <code style={{fontSize:10,color:"#a78bfa",background:"var(--sx)",padding:"1px 5px",borderRadius:4}}>{t.role}</code>
             </div>
             <div style={{display:"flex",gap:5}}>
               <button className="btn secondary small" onClick={()=>setEditando({...t,_origRole:t.role})}>✏️</button>
@@ -3053,7 +3054,7 @@ function TiposUsuarioInline({auth}){
           </div>
           <div style={{marginTop:8,fontSize:12,color:"var(--mt)",lineHeight:1.5}}>{t.descr}</div>
           <div style={{marginTop:7,display:"flex",flexWrap:"wrap",gap:4}}>
-            {(t.permissoes||[]).map(p=><span key={p} style={{padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:800,background:"#3b82f620",color:"#60a5fa"}}>{p}</span>)}
+            {(t.permissoes||[]).map(p=><span key={p} style={{padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:800,background:"#7c6af720",color:"#a78bfa"}}>{p}</span>)}
           </div>
         </div>
       );})}
@@ -3128,7 +3129,7 @@ function TabelaRepassePanel({profissionais,setProfissionais,convenios,procedimen
       </select>
       {profSel&&<div style={{fontSize:11,color:"var(--mt)"}}>
         {(profSel.especialidades||[]).join(" · ")}
-        <span style={{color:"#60a5fa",fontWeight:700,marginLeft:8}}>Nível: {profSel.nivelRepasse||"Pleno"}</span>
+        <span style={{color:"#a78bfa",fontWeight:700,marginLeft:8}}>Nível: {profSel.nivelRepasse||"Pleno"}</span>
       </div>}
       {profSel&&<div style={{marginLeft:"auto",display:"flex",gap:6,flexWrap:"wrap"}}>
         {conveniosAceitos.length>0?conveniosAceitos.map(cv=>(
@@ -3140,9 +3141,9 @@ function TabelaRepassePanel({profissionais,setProfissionais,convenios,procedimen
     {profSel&&<>
       <div style={{display:"flex",gap:6,marginBottom:14}}>
         {[["tabela","📋 Tabela de Valores"],["convenios","🏥 Convênios Aceitos"]].map(([k,l])=>(
-          <button key={k} className="btn tab-btn" onClick={()=>setSubTab(k)} style={{background:subTab===k?"var(--na)":"transparent",color:subTab===k?"#3b82f6":"var(--mt)",fontWeight:subTab===k?800:500,fontSize:12}}>
+          <button key={k} className="btn tab-btn" onClick={()=>setSubTab(k)} style={{background:subTab===k?"var(--na)":"transparent",color:subTab===k?"#7c6af7":"var(--mt)",fontWeight:subTab===k?800:500,fontSize:12}}>
             {l}
-            {k==="tabela"&&tabela.length>0&&<span style={{marginLeft:5,background:"#3b82f6",color:"#fff",borderRadius:20,padding:"0 5px",fontSize:10,fontWeight:800}}>{tabela.length}</span>}
+            {k==="tabela"&&tabela.length>0&&<span style={{marginLeft:5,background:"#7c6af7",color:"#fff",borderRadius:20,padding:"0 5px",fontSize:10,fontWeight:800}}>{tabela.length}</span>}
             {k==="convenios"&&conveniosAceitos.length>0&&<span style={{marginLeft:5,background:"#0d9488",color:"#fff",borderRadius:20,padding:"0 5px",fontSize:10,fontWeight:800}}>{conveniosAceitos.length}</span>}
           </button>
         ))}
@@ -3170,8 +3171,8 @@ function TabelaRepassePanel({profissionais,setProfissionais,convenios,procedimen
           <button className="btn primary" onClick={()=>{cancelForm();setShowForm(true);}}>+ Adicionar Linha</button>
           {tabela.length>0&&<span style={{fontSize:11,color:"var(--mt)"}}>{tabela.length} linha(s) · clique ✏️ para editar</span>}
         </div>
-        {showForm&&<div className="card" style={{padding:16,marginBottom:14,borderLeft:"3px solid #3b82f6"}}>
-          <div style={{fontWeight:800,fontSize:13,color:"#3b82f6",marginBottom:12}}>{editRow?"✏️ Editar linha":"+ Nova linha"} — {profSel.nome}</div>
+        {showForm&&<div className="card" style={{padding:16,marginBottom:14,borderLeft:"3px solid #7c6af7"}}>
+          <div style={{fontWeight:800,fontSize:13,color:"#7c6af7",marginBottom:12}}>{editRow?"✏️ Editar linha":"+ Nova linha"} — {profSel.nome}</div>
           <div style={{display:"grid",gridTemplateColumns:"1.3fr 2fr 130px 105px auto",gap:10,alignItems:"end"}}>
             <div><label>Convênio *</label>
               <select value={form.convenio} onChange={e=>sf({convenio:e.target.value})}>
@@ -3259,12 +3260,12 @@ function TabelaRepassePanel({profissionais,setProfissionais,convenios,procedimen
               <span style={{color:"var(--mt)"}}>TOTAIS ({tabela.length} linhas)</span>
               <span>Tabela: <b style={{color:"#f59e0b"}}>{brl(tabela.reduce((s,r)=>s+(r.valorTabela||0),0))}</b></span>
               <span>Repasse: <b style={{color:"#34d399"}}>{brl(tabela.reduce((s,r)=>s+(r.valorTabela||0)*(r.pctRepasse||0)/100,0))}</b></span>
-              <span>Clínica: <b style={{color:"#60a5fa"}}>{brl(tabela.reduce((s,r)=>s+(r.valorTabela||0)*(1-(r.pctRepasse||0)/100),0))}</b></span>
+              <span>Clínica: <b style={{color:"#a78bfa"}}>{brl(tabela.reduce((s,r)=>s+(r.valorTabela||0)*(1-(r.pctRepasse||0)/100),0))}</b></span>
             </div>
           </div>);
         })()}
       </>}
-      <div style={{marginTop:12,padding:"10px 14px",background:"#1e3a5f18",borderRadius:10,border:"1px solid #3b82f628",fontSize:11,color:"var(--mt)",lineHeight:1.7}}>
+      <div style={{marginTop:12,padding:"10px 14px",background:"#1e3a5f18",borderRadius:10,border:"1px solid #7c6af728",fontSize:11,color:"var(--mt)",lineHeight:1.7}}>
         💡 <b style={{color:"var(--tx)"}}>Base dos cálculos:</b> ao marcar sessão como <b>Atendido</b>, o sistema consulta esta tabela (convênio + procedimento do profissional) para gerar automaticamente a conta a pagar (CP). Se não houver linha específica, usa o % padrão do procedimento global.
       </div>
     </>}
@@ -3292,7 +3293,7 @@ function RecebimentosPanel({profissionais,procedimentos,convenios,lancamentos,ag
     const profOk=!selProfId||String(a.profissionalId)===String(selProfId);
     return repOk&&a.data>=recebIni&&a.data<=recebFim&&profOk;
   });
-  const Pill=({v,l})=>(<button onClick={()=>aplicarRecebPeriodo(v)} style={{padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:800,border:"1.5px solid "+(recebPeriodo===v?"#3b82f6":"var(--cpb)"),background:recebPeriodo===v?"#3b82f615":"transparent",color:recebPeriodo===v?"#3b82f6":"var(--mt)",cursor:"pointer"}}>{l}</button>);
+  const Pill=({v,l})=>(<button onClick={()=>aplicarRecebPeriodo(v)} style={{padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:800,border:"1.5px solid "+(recebPeriodo===v?"#7c6af7":"var(--cpb)"),background:recebPeriodo===v?"#7c6af715":"transparent",color:recebPeriodo===v?"#7c6af7":"var(--mt)",cursor:"pointer"}}>{l}</button>);
   const profsVisiveis=profsAtivos.filter(p=>!selProfId||String(p.id)===String(selProfId));
 
   const exportPDF=()=>{
@@ -3366,7 +3367,7 @@ function RecebimentosPanel({profissionais,procedimentos,convenios,lancamentos,ag
     </div>
     {/* KPIs */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:14}}>
-      {[{label:"Sessões com repasse",val:totSess,color:"#60a5fa"},{label:"Receita bruta",val:brl(totBruto),color:"#f59e0b"},{label:"Total a repassar",val:brl(totRep),color:"#34d399"}].map(k=>(
+      {[{label:"Sessões com repasse",val:totSess,color:"#a78bfa"},{label:"Receita bruta",val:brl(totBruto),color:"#f59e0b"},{label:"Total a repassar",val:brl(totRep),color:"#34d399"}].map(k=>(
         <div key={k.label} className="card" style={{padding:"12px 16px",borderTop:"3px solid "+k.color}}>
           <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:k.color,lineHeight:1}}>{k.val}</div>
           <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",letterSpacing:".5px",marginTop:4}}>{k.label}</div>
@@ -3396,7 +3397,7 @@ function RecebimentosPanel({profissionais,procedimentos,convenios,lancamentos,ag
             </div>
           </div>
           <div style={{display:"flex",gap:6,marginBottom:10}}>
-            {[{v:aps.length,l:"sessões",c:"#60a5fa"},{v:brl(tBruto),l:"bruto",c:"var(--mt)"},{v:pctMed+"%",l:"% med.",c:"#a78bfa"}].map(x=>(
+            {[{v:aps.length,l:"sessões",c:"#a78bfa"},{v:brl(tBruto),l:"bruto",c:"var(--mt)"},{v:pctMed+"%",l:"% med.",c:"#a78bfa"}].map(x=>(
               <div key={x.l} style={{flex:1,background:"var(--sx)",borderRadius:7,padding:"6px 0",textAlign:"center"}}>
                 <div style={{fontWeight:900,color:x.c,fontSize:14}}>{x.v}</div>
                 <div style={{fontSize:9,color:"var(--mt)"}}>{x.l}</div>
@@ -3407,7 +3408,7 @@ function RecebimentosPanel({profissionais,procedimentos,convenios,lancamentos,ag
             {pago>0&&<span style={{padding:"2px 8px",borderRadius:20,background:"#34d39920",color:"#34d399",fontWeight:800}}>✅ Pago: {brl(pago)}</span>}
             {pendente>0&&<span style={{padding:"2px 8px",borderRadius:20,background:"#f59e0b20",color:"#f59e0b",fontWeight:800}}>⏳ Pend.: {brl(pendente)}</span>}
           </div>}
-          <div style={{fontSize:10,color:"#60a5fa",marginTop:8,fontWeight:700}}>{recebProf?.id===prof.id?"▼ Ocultar sessões":"▶ Ver sessões"}</div>
+          <div style={{fontSize:10,color:"#a78bfa",marginTop:8,fontWeight:700}}>{recebProf?.id===prof.id?"▼ Ocultar sessões":"▶ Ver sessões"}</div>
         </div>);
       })}
       {profsVisiveis.length===0&&<div className="muted" style={{padding:20,gridColumn:"1/-1",textAlign:"center"}}>Nenhum profissional no filtro.</div>}
@@ -3433,7 +3434,7 @@ function RecebimentosPanel({profissionais,procedimentos,convenios,lancamentos,ag
           const st=STATUS_AG[ag.status]||{color:"#64748b",label:ag.status,icon:"📋"};
           return(<div key={ag.id} className="grid-row" style={{gridTemplateColumns:"90px 58px 1fr 130px 78px 90px 65px 90px",background:i%2?"var(--gr)":""}}>
             <div style={{fontSize:11,fontWeight:700}}>{brDate(ag.data)}</div>
-            <div style={{fontWeight:800,color:"#60a5fa",fontSize:11}}>{ag.horarioSessao}</div>
+            <div style={{fontWeight:800,color:"#a78bfa",fontSize:11}}>{ag.horarioSessao}</div>
             <div style={{fontWeight:700,fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pN?.nome||"—"}</div>
             <div style={{fontSize:11,color:"var(--mt)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pr?.nome||"—"}</div>
             <div><span style={{padding:"1px 5px",borderRadius:20,fontSize:9,fontWeight:800,background:st.color+"25",color:st.color}}>{st.icon} {st.label}</span></div>
@@ -3469,7 +3470,7 @@ function ProfissionaisPage({profissionais,setProfissionais,setChamados,showToast
     </div>
     <div className="tab-bar" style={{marginBottom:14}}>
       {[["lista","🩺 Profissionais"],["recebimentos","💸 Repasse"],["tabRepasse","📋 Tabela de Repasse"],["tipos","👥 Tipos de Usuário"]].map(([k,lbl])=>(
-        <button key={k} className="btn tab-btn" onClick={()=>setTabProfP(k)} style={{background:tabProfP===k?"var(--na)":"transparent",color:tabProfP===k?"#3b82f6":"var(--mt)",fontWeight:tabProfP===k?800:500}}>{lbl}</button>
+        <button key={k} className="btn tab-btn" onClick={()=>setTabProfP(k)} style={{background:tabProfP===k?"var(--na)":"transparent",color:tabProfP===k?"#7c6af7":"var(--mt)",fontWeight:tabProfP===k?800:500}}>{lbl}</button>
       ))}
     </div>
     {tabProfP==="tipos"&&<TiposUsuarioInline auth={auth}/>}
@@ -3504,7 +3505,7 @@ function ProfissionaisPage({profissionais,setProfissionais,setChamados,showToast
           </div>
           <div style={{marginTop:8,display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
             <div style={{background:"var(--sx)",borderRadius:6,padding:"5px 7px"}}><div style={{fontSize:9,color:"var(--lb)",fontWeight:800,letterSpacing:.5}}>DIAS</div><div style={{fontSize:11,fontWeight:700,color:"#10b981"}}>{DIAS_SEMANA.filter(d=>p.escala?.[d]?.ativo).map(d=>d.slice(0,3)).join("·")||"—"}</div></div>
-            <div style={{background:"var(--sx)",borderRadius:6,padding:"5px 7px"}}><div style={{fontSize:9,color:"var(--lb)",fontWeight:800,letterSpacing:.5}}>FILIAIS</div><div style={{fontSize:10,fontWeight:700,color:"#60a5fa"}}>{(p.filiaisAtendimento||[]).length>0?filiais.filter(f=>(p.filiaisAtendimento||[]).includes(f.id)).map(f=>f.codigo).join("·"):"—"}</div></div>
+            <div style={{background:"var(--sx)",borderRadius:6,padding:"5px 7px"}}><div style={{fontSize:9,color:"var(--lb)",fontWeight:800,letterSpacing:.5}}>FILIAIS</div><div style={{fontSize:10,fontWeight:700,color:"#a78bfa"}}>{(p.filiaisAtendimento||[]).length>0?filiais.filter(f=>(p.filiaisAtendimento||[]).includes(f.id)).map(f=>f.codigo).join("·"):"—"}</div></div>
           </div>
           <div style={{marginTop:8,paddingTop:7,borderTop:"1px solid var(--db)"}} onClick={e=>e.stopPropagation()}>
             <button className="btn secondary small" style={{width:"100%",fontSize:11}} onClick={()=>setContratoProf(p)}>📄 Gerar Contrato PDF</button>
@@ -3538,7 +3539,7 @@ function SalasPage({salas,setSalas,filiais,setFiliais,showToast}){
         {tabSF==="salas"?<button className="btn primary" onClick={()=>{setEditingS(null);setFs(blankS);setModalS(true);}}>+ Nova Sala</button>:<button className="btn primary" onClick={()=>{setEditingF(null);setFf(blankF);setModalF(true);}}>+ Nova Filial</button>}
       </div>
     </div>
-    <div className="tab-bar"><button className="btn tab-btn" onClick={()=>setTabSF("salas")} style={{background:tabSF==="salas"?"var(--na)":"transparent",color:tabSF==="salas"?"#3b82f6":"var(--mt)",fontWeight:tabSF==="salas"?800:500}}>🚪 Salas ({salas.length})</button><button className="btn tab-btn" onClick={()=>setTabSF("filiais")} style={{background:tabSF==="filiais"?"var(--na)":"transparent",color:tabSF==="filiais"?"#3b82f6":"var(--mt)",fontWeight:tabSF==="filiais"?800:500}}>🏢 Filiais ({filiais.length})</button></div>
+    <div className="tab-bar"><button className="btn tab-btn" onClick={()=>setTabSF("salas")} style={{background:tabSF==="salas"?"var(--na)":"transparent",color:tabSF==="salas"?"#7c6af7":"var(--mt)",fontWeight:tabSF==="salas"?800:500}}>🚪 Salas ({salas.length})</button><button className="btn tab-btn" onClick={()=>setTabSF("filiais")} style={{background:tabSF==="filiais"?"var(--na)":"transparent",color:tabSF==="filiais"?"#7c6af7":"var(--mt)",fontWeight:tabSF==="filiais"?800:500}}>🏢 Filiais ({filiais.length})</button></div>
     {tabSF==="salas"&&<div>{modoLista
       ?<div className="card" style={{overflow:"hidden"}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 120px 80px 60px",background:"var(--sx)",padding:"6px 12px",fontSize:10,fontWeight:900,color:"var(--mt)",borderBottom:"1px solid var(--cb)"}}>
@@ -3552,10 +3553,10 @@ function SalasPage({salas,setSalas,filiais,setFiliais,showToast}){
             <div><button className="btn secondary small" style={{fontSize:10}} onClick={e=>{e.stopPropagation();setEditingS(s);setFs({...s});setModalS(true);}}>✏️</button></div>
           </div>);})}
         </div>
-      :<div>{filiais.filter(f=>f.ativa).map(fil=>{const sl=salasPorFilial(fil.id);return(<div key={fil.id} style={{marginBottom:18}}><div style={{fontWeight:900,color:"#60a5fa",fontSize:12,marginBottom:7,letterSpacing:.5}}>🏢 {fil.nome} <span style={{color:"var(--mt)",fontWeight:400,fontSize:11}}>({fil.codigo})</span></div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:7}}>{sl.map(s=><div key={s.id} className="card rh" onClick={()=>{setEditingS(s);setFs({...s});setModalS(true);}} style={{padding:11,borderLeft:"4px solid "+s.cor}}><div style={{fontWeight:800,color:s.cor,fontSize:12}}>{s.nome}</div>{s.especialidade&&<div style={{fontSize:11,color:espCor(s.especialidade),marginTop:1,fontWeight:700}}>{s.especialidade}</div>}<div className="muted" style={{fontSize:10,marginTop:2}}>{s.ativa?"✅ Ativa":"❌ Inativa"}</div></div>)}{sl.length===0&&<div className="muted" style={{fontSize:11}}>Nenhuma sala.</div>}</div></div>);})}
+      :<div>{filiais.filter(f=>f.ativa).map(fil=>{const sl=salasPorFilial(fil.id);return(<div key={fil.id} style={{marginBottom:18}}><div style={{fontWeight:900,color:"#a78bfa",fontSize:12,marginBottom:7,letterSpacing:.5}}>🏢 {fil.nome} <span style={{color:"var(--mt)",fontWeight:400,fontSize:11}}>({fil.codigo})</span></div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:7}}>{sl.map(s=><div key={s.id} className="card rh" onClick={()=>{setEditingS(s);setFs({...s});setModalS(true);}} style={{padding:11,borderLeft:"4px solid "+s.cor}}><div style={{fontWeight:800,color:s.cor,fontSize:12}}>{s.nome}</div>{s.especialidade&&<div style={{fontSize:11,color:espCor(s.especialidade),marginTop:1,fontWeight:700}}>{s.especialidade}</div>}<div className="muted" style={{fontSize:10,marginTop:2}}>{s.ativa?"✅ Ativa":"❌ Inativa"}</div></div>)}{sl.length===0&&<div className="muted" style={{fontSize:11}}>Nenhuma sala.</div>}</div></div>);})}
       </div>
     }</div>}
-    {tabSF==="filiais"&&<div style={{display:modoLista?"block":"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:10}}>{filiais.map(f=><div key={f.id} className="card rh" style={{padding:13,borderLeft:"3px solid #3b82f6"}} onClick={()=>{setEditingF(f);setFf({...blankF,...f});setModalF(true);}}><div style={{display:"flex",justifyContent:"space-between"}}><div><div style={{fontWeight:800,fontSize:13}}>{f.nome}</div><div className="muted" style={{fontSize:11}}>{f.codigo} · {salasPorFilial(f.id).length} sala(s)</div>{f.logradouro&&<div style={{fontSize:10,color:"var(--mt)",marginTop:2}}>📍 {f.logradouro}{f.numero?", "+f.numero:""}{f.bairro?" — "+f.bairro:""}</div>}{f.cidade&&<div style={{fontSize:10,color:"var(--mt)"}}>{f.cidade}{f.estado?" / "+f.estado:""}</div>}{f.telefone&&<div style={{fontSize:10,color:"var(--mt)"}}>📞 {maskPhone(f.telefone)}</div>}</div><span style={{fontSize:11,fontWeight:800,color:f.ativa?"#34d399":"#f87171"}}>{f.ativa?"Ativa":"Inativa"}</span></div></div>)}</div>}
+    {tabSF==="filiais"&&<div style={{display:modoLista?"block":"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:10}}>{filiais.map(f=><div key={f.id} className="card rh" style={{padding:13,borderLeft:"3px solid #7c6af7"}} onClick={()=>{setEditingF(f);setFf({...blankF,...f});setModalF(true);}}><div style={{display:"flex",justifyContent:"space-between"}}><div><div style={{fontWeight:800,fontSize:13}}>{f.nome}</div><div className="muted" style={{fontSize:11}}>{f.codigo} · {salasPorFilial(f.id).length} sala(s)</div>{f.logradouro&&<div style={{fontSize:10,color:"var(--mt)",marginTop:2}}>📍 {f.logradouro}{f.numero?", "+f.numero:""}{f.bairro?" — "+f.bairro:""}</div>}{f.cidade&&<div style={{fontSize:10,color:"var(--mt)"}}>{f.cidade}{f.estado?" / "+f.estado:""}</div>}{f.telefone&&<div style={{fontSize:10,color:"var(--mt)"}}>📞 {maskPhone(f.telefone)}</div>}</div><span style={{fontSize:11,fontWeight:800,color:f.ativa?"#34d399":"#f87171"}}>{f.ativa?"Ativa":"Inativa"}</span></div></div>)}</div>}
     {modalS&&<div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setModalS(false)}><div className="modal" style={{width:520}}><div className="modal-head"><h2>{editingS?"✏️ Editar":"+ Nova"} Sala</h2><button className="icon-btn" onClick={()=>setModalS(false)}>×</button></div><div className="stack"><div className="g2"><div><label>Filial</label><select value={fs.filialId} onChange={e=>setFs(f=>({...f,filialId:Number(e.target.value)}))}>{filiais.map(f=><option key={f.id} value={f.id}>{f.nome}</option>)}</select></div><div><label>Nome *</label><input value={fs.nome} onChange={e=>setFs(f=>({...f,nome:e.target.value}))} autoFocus/></div></div><div><label>Especialidade</label><select value={fs.especialidade||""} onChange={e=>setFs(f=>({...f,especialidade:e.target.value}))}><option value="">Sem esp.</option>{ESPECIALIDADES_LIST.map(e=><option key={e}>{e}</option>)}</select></div><div><label>💵 Custo Mensal (R$)</label><input type="number" min="0" step="50" value={fs.custoMensal||0} onChange={e=>setFs(f=>({...f,custoMensal:Number(e.target.value)}))} placeholder="0,00"/></div><div><label>Cor</label><div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}>{CORES.map(c=><div key={c} onClick={()=>setFs(f=>({...f,cor:c}))} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",border:"3px solid "+(fs.cor===c?"#fff":"transparent"),transform:fs.cor===c?"scale(1.2)":"scale(1)",transition:".1s"}}/>)}</div></div><label style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",textTransform:"none",fontSize:12,fontWeight:700}}><input type="checkbox" checked={fs.ativa} onChange={e=>setFs(f=>({...f,ativa:e.target.checked}))}/>Sala ativa</label><div className="actions"><button className="btn secondary" onClick={()=>setModalS(false)}>Cancelar</button><button className="btn primary" onClick={saveS}>Salvar</button></div></div></div></div>}
     {modalF&&<div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setModalF(false)}><div className="modal" style={{width:520}}><div className="modal-head"><h2>{editingF?"✏️ Editar":"+ Nova"} Filial</h2><button className="icon-btn" onClick={()=>setModalF(false)}>×</button></div><div className="stack">
       <div className="g2"><div><label>Nome *</label><input value={ff.nome} onChange={e=>setFf(f=>({...f,nome:e.target.value}))} autoFocus/></div><div><label>Código</label><input value={ff.codigo} onChange={e=>setFf(f=>({...f,codigo:e.target.value}))}/></div></div>
@@ -3667,7 +3668,7 @@ function EspelhoAgendaPage({data,agenda,pacientes,profissionais,salas,filiais,co
     </div>}
     <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:6,marginBottom:12}}>
       {[
-        ["SESSÕES","📅",totalSem,"#60a5fa"],
+        ["SESSÕES","📅",totalSem,"#a78bfa"],
         ["ATENDIDOS","✅",atendSem,"#34d399"],
         ["FALTAS","🚫",faltaSem,"#f87171"],
         ["AGUARDANDO","📋",agendSem,"#f59e0b"],
@@ -3695,14 +3696,14 @@ function EspelhoAgendaPage({data,agenda,pacientes,profissionais,salas,filiais,co
               <div style={{padding:"4px",textAlign:"center",fontSize:9,fontWeight:900,color:"var(--mt)",borderBottom:"1px solid var(--fc)",borderRight:"1px solid var(--fc)"}}>HORA</div>
               {NOMES.map((n,i)=>{
                 const isH=dias[i]===hoje_str;
-                return(<div key={i} style={{padding:"3px 2px",textAlign:"center",fontSize:9,fontWeight:900,color:isH?"#60a5fa":"var(--mt)",borderBottom:"1px solid var(--fc)",borderRight:"1px solid var(--fc)",background:isH?"var(--na)":""}}>{n}<br/><small style={{fontWeight:400,fontSize:8}}>{brDate(dias[i]).slice(0,5)}</small></div>);
+                return(<div key={i} style={{padding:"3px 2px",textAlign:"center",fontSize:9,fontWeight:900,color:isH?"#a78bfa":"var(--mt)",borderBottom:"1px solid var(--fc)",borderRight:"1px solid var(--fc)",background:isH?"var(--na)":""}}>{n}<br/><small style={{fontWeight:400,fontSize:8}}>{brDate(dias[i]).slice(0,5)}</small></div>);
               })}
             </div>
             {/* DATA ROWS — one div per turno */}
             {TURNOS_H.map((hora,idx)=>(
               <div key={hora} style={{display:"grid",gridTemplateColumns:COL,minWidth:620}}>
                 {/* Hora label */}
-                <div style={{display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#3b82f6",borderBottom:"1px solid var(--fc)",borderRight:"1px solid var(--fc)",background:idx%2?"var(--gr)":"",minHeight:40}}>{hora}</div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#7c6af7",borderBottom:"1px solid var(--fc)",borderRight:"1px solid var(--fc)",background:idx%2?"var(--gr)":"",minHeight:40}}>{hora}</div>
                 {/* 7 day cells */}
                 {dias.map((dia,di)=>{
                   const diaNome=DIAS_SEMANA[di];
@@ -3768,14 +3769,14 @@ function MapeamentoSalasPage({data,agenda,salas,filiais,pacientes,profissionais,
       </div>
     </div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
-      {[["OCUPAÇÃO",totalAtivas?Math.round(emUso/totalAtivas*100)+"%":"—","#3b82f6"],["EM USO",emUso+"/"+totalAtivas,"#10b981"],["HOJE",eventos.length,"#f59e0b"]].map(([t,v,c])=>(
+      {[["OCUPAÇÃO",totalAtivas?Math.round(emUso/totalAtivas*100)+"%":"—","#7c6af7"],["EM USO",emUso+"/"+totalAtivas,"#10b981"],["HOJE",eventos.length,"#f59e0b"]].map(([t,v,c])=>(
         <div key={t} className="card" style={{padding:9,textAlign:"center",borderTop:"3px solid "+c}}><div className="muted" style={{fontSize:9,fontWeight:900,letterSpacing:.5}}>{t}</div><div style={{fontSize:18,fontWeight:900,color:c,marginTop:1}}>{v}</div></div>
       ))}
     </div>
     <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:12}}>
       {indFiliais.map(f=>(
-        <div key={f.id} className="card" style={{padding:"6px 10px",borderLeft:"3px solid #3b82f6",minWidth:140}}>
-          <div style={{fontWeight:800,fontSize:11,color:"#60a5fa"}}>{f.nome}</div>
+        <div key={f.id} className="card" style={{padding:"6px 10px",borderLeft:"3px solid #7c6af7",minWidth:140}}>
+          <div style={{fontWeight:800,fontSize:11,color:"#a78bfa"}}>{f.nome}</div>
           <div style={{fontSize:11,marginTop:2,display:"flex",gap:7}}><span style={{color:"#10b981"}}>🟢 {f.total-f.occ} livres</span><span style={{color:"#f59e0b"}}>🟡 {f.occ} em uso</span></div>
         </div>
       ))}
@@ -3887,8 +3888,8 @@ function ConveniosProcedimentosPage({convenios,setConvenios,procedimentos,setPro
 
   const tabBtn=(k,l,n)=>(
     <button key={k} className="btn tab-btn" onClick={()=>{setTab(k);setBusca("");}}
-      style={{background:tab===k?"var(--na)":"transparent",color:tab===k?"#3b82f6":"var(--mt)",fontWeight:tab===k?800:500}}>
-      {l}{n>0&&<span style={{marginLeft:4,background:"#3b82f6",color:"#fff",borderRadius:20,padding:"0 6px",fontSize:9,fontWeight:900}}>{n}</span>}
+      style={{background:tab===k?"var(--na)":"transparent",color:tab===k?"#7c6af7":"var(--mt)",fontWeight:tab===k?800:500}}>
+      {l}{n>0&&<span style={{marginLeft:4,background:"#7c6af7",color:"#fff",borderRadius:20,padding:"0 6px",fontSize:9,fontWeight:900}}>{n}</span>}
     </button>
   );
 
@@ -3911,7 +3912,7 @@ function ConveniosProcedimentosPage({convenios,setConvenios,procedimentos,setPro
     {/* ── CONVÊNIOS ── */}
     {tab==="convenios"&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:10}}>
       {filtC.map(c=>{
-        const cor=c.ativo===false?"#64748b":"#3b82f6";
+        const cor=c.ativo===false?"#64748b":"#7c6af7";
         const nProc=procedimentos.filter(p=>(p.conveniosValores||[]).some(v=>v.convenioId===String(c.id))).length;
         return(<div key={c.id} className="card" style={{padding:14,borderTop:"3px solid "+cor,opacity:c.ativo===false?.6:1}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
@@ -3936,7 +3937,7 @@ function ConveniosProcedimentosPage({convenios,setConvenios,procedimentos,setPro
           </div>
           <div style={{marginTop:8,paddingTop:7,borderTop:"1px solid var(--db)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div style={{display:"flex",gap:6}}>
-              {c.manual&&<a href={c.manual} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#60a5fa",fontWeight:700}}>💡 Manual</a>}
+              {c.manual&&<a href={c.manual} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#a78bfa",fontWeight:700}}>💡 Manual</a>}
               {c.site&&<a href={c.site} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#34d399",fontWeight:700}}>🌐 Site</a>}
             </div>
             {nProc>0&&<span style={{fontSize:10,color:"var(--mt)"}}>{nProc} procedimento(s)</span>}
@@ -3959,7 +3960,7 @@ function ConveniosProcedimentosPage({convenios,setConvenios,procedimentos,setPro
             <div style={{fontWeight:800,fontSize:13}}>{p.nome}</div>
             <div style={{fontSize:10,color:"var(--mt)",marginTop:1}}>
               {p.especialidade&&<span style={{color:espCor(p.especialidade),fontWeight:700,marginRight:6}}>{p.especialidade}</span>}
-              {nConv>0&&<span style={{color:"#60a5fa"}}>💊 {nConv} convênio(s)</span>}
+              {nConv>0&&<span style={{color:"#a78bfa"}}>💊 {nConv} convênio(s)</span>}
             </div>
           </div>
           <div style={{fontSize:11,color:"var(--mt)"}}>{p.categoria}</div>
@@ -4096,8 +4097,8 @@ function ConveniosProcedimentosPage({convenios,setConvenios,procedimentos,setPro
             </div>
           </div>
 
-          <div className="section-box" style={{borderColor:"#3b82f630"}}>
-            <div className="section-title" style={{color:"#60a5fa"}}>🏥 Valores por Convênio</div>
+          <div className="section-box" style={{borderColor:"#7c6af730"}}>
+            <div className="section-title" style={{color:"#a78bfa"}}>🏥 Valores por Convênio</div>
             <div style={{fontSize:11,color:"var(--mt)",marginBottom:8}}>Defina valores específicos por convênio. Se não informado, usa o valor base acima.</div>
             <div style={{display:"flex",gap:8,alignItems:"flex-end",marginBottom:10}}>
               <div style={{flex:2}}>
@@ -4174,8 +4175,8 @@ function ManuaisPage({manuais,setManuais,showToast,templatePaciente,setTemplateP
 
   const tabBtn=(k,l,badge)=>(
     <button key={k} className="btn tab-btn" onClick={()=>setTab(k)}
-      style={{background:tab===k?"var(--na)":"transparent",color:tab===k?"#3b82f6":"var(--mt)",fontWeight:tab===k?800:500,display:"flex",gap:5,alignItems:"center"}}>
-      {l}{badge&&<span style={{padding:"1px 6px",borderRadius:20,fontSize:9,background:"#3b82f6",color:"#fff",fontWeight:900}}>{badge}</span>}
+      style={{background:tab===k?"var(--na)":"transparent",color:tab===k?"#7c6af7":"var(--mt)",fontWeight:tab===k?800:500,display:"flex",gap:5,alignItems:"center"}}>
+      {l}{badge&&<span style={{padding:"1px 6px",borderRadius:20,fontSize:9,background:"#7c6af7",color:"#fff",fontWeight:900}}>{badge}</span>}
     </button>
   );
 
@@ -4196,13 +4197,13 @@ function ManuaisPage({manuais,setManuais,showToast,templatePaciente,setTemplateP
     {/* ── MANUAIS DE CONVÊNIO ── */}
     {tab==="convenios"&&<>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))",gap:11}}>
-        {manuais.map(m=><div key={m.id} className="card" style={{padding:14,borderTop:"3px solid #3b82f6"}}>
+        {manuais.map(m=><div key={m.id} className="card" style={{padding:14,borderTop:"3px solid #7c6af7"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
             <div><div style={{fontWeight:800}}>📋 {m.titulo}</div><div className="muted" style={{fontSize:11,marginTop:2}}>{m.descricao}</div><div className="muted" style={{fontSize:10,marginTop:2}}>📅 {brDate(m.data)}</div></div>
             <div style={{display:"flex",gap:4}}><button className="btn secondary small" onClick={()=>{setEditing(m);setForm({...m});setModal(true);}}>✏️</button><button className="btn danger small" onClick={()=>{if(confirm("Excluir?"))setManuais(a=>a.filter(x=>x.id!==m.id));}}>🗑️</button></div>
           </div>
           <div style={{marginTop:8,display:"flex",gap:6}}>
-            {m.url&&<a href={m.url} target="_blank" rel="noreferrer" style={{fontSize:12,color:"#60a5fa",fontWeight:700}}>🔗 Abrir URL</a>}
+            {m.url&&<a href={m.url} target="_blank" rel="noreferrer" style={{fontSize:12,color:"#a78bfa",fontWeight:700}}>🔗 Abrir URL</a>}
             {m.arquivo&&<a href={m.arquivo.url} target="_blank" rel="noreferrer" style={{fontSize:12,color:"#34d399",fontWeight:700}}>📄 {m.arquivo.nome}</a>}
           </div>
         </div>)}
@@ -4219,11 +4220,11 @@ function ManuaisPage({manuais,setManuais,showToast,templatePaciente,setTemplateP
         ?["nome","cpf","nascimento","celular","convenio","plano","cidade","resp1Nome","resp1Cpf","resp1Whatsapp"]
         :["nome","especialidades","conselho","numConselho","nivelRepasse","cidade"];
       return(<div className="stack">
-        <div style={{padding:"10px 14px",background:"#3b82f615",borderRadius:10,border:"1px solid #3b82f630"}}>
-          <div style={{fontWeight:800,fontSize:12,color:"#60a5fa",marginBottom:6}}>💡 Variáveis disponíveis</div>
+        <div style={{padding:"10px 14px",background:"#7c6af715",borderRadius:10,border:"1px solid #7c6af730"}}>
+          <div style={{fontWeight:800,fontSize:12,color:"#a78bfa",marginBottom:6}}>💡 Variáveis disponíveis</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
             {variaveis.map(v=>(
-              <code key={v} onClick={()=>{}} style={{background:"var(--sx)",padding:"2px 7px",borderRadius:5,fontSize:11,color:"#93c5fd",cursor:"copy",border:"1px solid var(--sc)"}}
+              <code key={v} style={{background:"var(--sx)",padding:"2px 7px",borderRadius:5,fontSize:11,color:"#93c5fd",cursor:"copy",border:"1px solid var(--sc)"}}
                 title={"Clique para copiar"}
                 onClick={()=>{navigator.clipboard?.writeText("{{"+v+"}}");showToast("📋 Copiado: {{"+v+"}}","ok");}}>
                 {"{{"}{v}{"}}"}
@@ -4257,8 +4258,8 @@ function ManuaisPage({manuais,setManuais,showToast,templatePaciente,setTemplateP
       </div>
 
       {/* Editor de modelo */}
-      <div className="section-box" style={{borderColor:"#3b82f640"}}>
-        <div className="section-title" style={{color:"#60a5fa"}}>{modeloEdit?"✏️ Editando: "+modeloEdit.titulo:"➕ Novo Modelo — "+espSel}</div>
+      <div className="section-box" style={{borderColor:"#7c6af740"}}>
+        <div className="section-title" style={{color:"#a78bfa"}}>{modeloEdit?"✏️ Editando: "+modeloEdit.titulo:"➕ Novo Modelo — "+espSel}</div>
         <div className="stack" style={{gap:8}}>
           <div><label>Título do Modelo</label>
             <input value={modeloForm.titulo} onChange={e=>setModeloForm(f=>({...f,titulo:e.target.value}))} placeholder="Ex: Avaliação Inicial, Sessão de Mando..."/>
@@ -4345,7 +4346,7 @@ function ManuaisPage({manuais,setManuais,showToast,templatePaciente,setTemplateP
         <div className="section-title" style={{color:"#2670E8"}}>🪜 Passo a passo — Como assinar um documento</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:10,marginTop:4}}>
           {[
-            ["1","Gerar o PDF","No Cuide, gere o contrato do paciente ou profissional clicando em 📄 Contrato","#3b82f6"],
+            ["1","Gerar o PDF","No Cuide, gere o contrato do paciente ou profissional clicando em 📄 Contrato","#7c6af7"],
             ["2","Acessar o portal","Acesse assinador.iti.br ou o app Gov.br no celular","#6366f1"],
             ["3","Fazer login","Entre com seu CPF e senha Gov.br (conta Prata ou Ouro recomendado)","#8b5cf6"],
             ["4","Enviar o documento","Clique em Assinar documento e faça upload do PDF gerado","#a78bfa"],
@@ -4390,7 +4391,7 @@ function ManuaisPage({manuais,setManuais,showToast,templatePaciente,setTemplateP
                 style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,background:"var(--sx)",border:"1px solid var(--cb)",textDecoration:"none",color:"var(--tx)"}}>
                 <span style={{fontSize:13}}>{label.split(" ")[0]}</span>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:700,fontSize:11,color:"#60a5fa"}}>{label.split(" ").slice(1).join(" ")}</div>
+                  <div style={{fontWeight:700,fontSize:11,color:"#a78bfa"}}>{label.split(" ").slice(1).join(" ")}</div>
                   <div style={{fontSize:10,color:"var(--mt)"}}>{desc}</div>
                 </div>
                 <span style={{fontSize:10,color:"var(--mt)"}}>↗</span>
@@ -4484,7 +4485,7 @@ function ChamadosPage({chamados,setChamados,showToast,fila,setFila,pacientes}){
           onClick={()=>{const num=String(Math.floor(100000+Math.random()*900000));setChamados(a=>[...a,{id:Date.now(),numero:num,setor:"Agendamento",tipo:"novo_paciente",nome:"Novo Paciente",descricao:"Solicitação de cadastro de novo paciente",data:hoje_str,status:"aberto",prioridade:"Normal",resp:""}]);showToast("📨 Chamado #"+num+" — Novo Paciente","ok");}}>
           👤 Novo Paciente
         </button>
-        <button className="btn secondary" style={{fontSize:11,borderColor:"#60a5fa",color:"#60a5fa"}}
+        <button className="btn secondary" style={{fontSize:11,borderColor:"#a78bfa",color:"#a78bfa"}}
           onClick={()=>{const num=String(Math.floor(100000+Math.random()*900000));setChamados(a=>[...a,{id:Date.now(),numero:num,setor:"Agendamento",tipo:"novo_agendamento",nome:"Novo Agendamento",descricao:"Solicitação de agendamento",data:hoje_str,status:"aberto",prioridade:"Normal",resp:""}]);showToast("📨 Chamado #"+num+" — Novo Agendamento","ok");}}>
           📅 Novo Agendamento
         </button>
@@ -4524,9 +4525,9 @@ function ChamadosPage({chamados,setChamados,showToast,fila,setFila,pacientes}){
                 <span style={{fontWeight:900,color:"var(--tx)"}}>#{ch.numero}</span>
                 <span style={{padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:800,background:cor+"25",color:cor}}>{LABEL_CHAMADO[ch.status]||ch.status}</span>
                 <span style={{padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:800,background:pCor+"25",color:pCor,border:"1px solid "+pCor+"40"}}>⚑ {ch.prioridade||"Normal"}</span>
-                <span style={{padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:800,background:"var(--na)",color:"#60a5fa"}}>{ch.setor}</span>
+                <span style={{padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:800,background:"var(--na)",color:"#a78bfa"}}>{ch.setor}</span>
                 <span className="muted" style={{fontSize:10}}>{brDate(ch.data)}</span>
-                {ch.tipo&&ch.tipo.startsWith("padrao_")&&<span style={{padding:"2px 6px",borderRadius:20,fontSize:9,fontWeight:800,background:"#3b82f620",color:"#60a5fa"}}>📋 Padronizado</span>}
+                {ch.tipo&&ch.tipo.startsWith("padrao_")&&<span style={{padding:"2px 6px",borderRadius:20,fontSize:9,fontWeight:800,background:"#7c6af720",color:"#a78bfa"}}>📋 Padronizado</span>}
               </div>
               <div style={{fontWeight:700,color:"var(--tx)",marginBottom:ch.descricao?4:0}}>{ch.nome}</div>
               {ch.descricao&&<pre style={{fontSize:10,color:"var(--mt)",whiteSpace:"pre-wrap",fontFamily:"inherit",background:"var(--sx)",padding:"5px 8px",borderRadius:6,maxHeight:80,overflow:"auto",margin:0}}>{ch.descricao}</pre>}
@@ -4566,8 +4567,8 @@ function ChamadosPage({chamados,setChamados,showToast,fila,setFila,pacientes}){
               {PADRAO_CHAMADO.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}
             </select>
           </div>}
-          {isPadrao&&<div className="section-box" style={{background:"#3b82f608",borderColor:"#3b82f625"}}>
-            <div className="section-title" style={{color:"#60a5fa"}}>📋 {padraoSel.label}</div>
+          {isPadrao&&<div className="section-box" style={{background:"#7c6af708",borderColor:"#7c6af725"}}>
+            <div className="section-title" style={{color:"#a78bfa"}}>📋 {padraoSel.label}</div>
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {padraoSel.campos.map(campo=>(
                 <div key={campo} style={{display:"grid",gridTemplateColumns:"140px 1fr",alignItems:"center",gap:7}}>
@@ -4645,7 +4646,7 @@ function FinanceiroPage({agenda,pacientes,profissionais,procedimentos,convenios,
     else if(p==="trimestre"){const x=new Date(d);x.setMonth(d.getMonth()-2);x.setDate(1);setDataIni(ymd(x));setDataFim(hoje_str);}
   };
 
-  const Pill=({v,l})=>(<button onClick={()=>aplicarPeriodo(v)} style={{padding:"4px 12px",borderRadius:20,fontSize:11,fontWeight:800,border:"1.5px solid "+(periodo===v?"#3b82f6":"var(--cpb)"),background:periodo===v?"#3b82f615":"transparent",color:periodo===v?"#3b82f6":"var(--mt)",cursor:"pointer",whiteSpace:"nowrap"}}>{l}</button>);
+  const Pill=({v,l})=>(<button onClick={()=>aplicarPeriodo(v)} style={{padding:"4px 12px",borderRadius:20,fontSize:11,fontWeight:800,border:"1.5px solid "+(periodo===v?"#7c6af7":"var(--cpb)"),background:periodo===v?"#7c6af715":"transparent",color:periodo===v?"#7c6af7":"var(--mt)",cursor:"pointer",whiteSpace:"nowrap"}}>{l}</button>);
 
   const faturados=agenda.filter(ag=>{
     const convOk=!filtroConv||(ag.convenio||"")===filtroConv;
@@ -4775,7 +4776,7 @@ function FinanceiroPage({agenda,pacientes,profissionais,procedimentos,convenios,
           const proc=procedimentos.find(p=>p.id===Number(ag.procedimentoId));
           return(<div key={ag.id} className="grid-row" style={{gridTemplateColumns:"90px 60px 1fr 130px 110px 130px 90px",background:i%2?"var(--gr)":""}}>
             <div style={{fontWeight:700,fontSize:11}}>{brDate(ag.data)}</div>
-            <div style={{fontWeight:800,color:"#60a5fa",fontSize:11}}>{ag.horarioSessao}</div>
+            <div style={{fontWeight:800,color:"#a78bfa",fontSize:11}}>{ag.horarioSessao}</div>
             <div style={{fontWeight:700,fontSize:12}}>{pac?.nome||"—"}</div>
             <div style={{fontSize:11,color:espCor((prof?.especialidades||[""])[0])}}>{profShort(prof?.nome||"—")}</div>
             <div><span style={{padding:"1px 6px",borderRadius:20,fontSize:10,fontWeight:800,background:"#22c55e20",color:"#22c55e"}}>{ag.convenio||"Particular"}</span></div>
@@ -4803,9 +4804,9 @@ function FinanceiroPage({agenda,pacientes,profissionais,procedimentos,convenios,
           const prof=profissionais.find(p=>p.id===Number(ag.profissionalId));
           const proc=procedimentos.find(p=>p.id===Number(ag.procedimentoId));
           const val=proc?.valor||0;
-          return(<div key={ag.id} className="grid-row" style={{gridTemplateColumns:"90px 60px 1fr 130px 110px 130px",background:i%2?"var(--gr)":"",cursor:"pointer"}} onClick={()=>{}}>
+          return(<div key={ag.id} className="grid-row" style={{gridTemplateColumns:"90px 60px 1fr 130px 110px 130px",background:i%2?"var(--gr)":""}}>
             <div style={{fontSize:11,fontWeight:700}}>{brDate(ag.data)}</div>
-            <div style={{fontSize:11,color:"#60a5fa",fontWeight:800}}>{ag.horarioSessao}</div>
+            <div style={{fontSize:11,color:"#a78bfa",fontWeight:800}}>{ag.horarioSessao}</div>
             <div style={{fontSize:11,fontWeight:700}}>{pac?.nome||"—"}</div>
             <div style={{fontSize:11,color:"var(--mt)"}}>{prof?.nome||"—"}</div>
             <div style={{fontSize:11}}>{ag.convenio||"—"}</div>
@@ -4831,9 +4832,9 @@ function FinanceiroPage({agenda,pacientes,profissionais,procedimentos,convenios,
           const prof=profissionais.find(p=>p.id===Number(ag.profissionalId));
           const proc=procedimentos.find(p=>p.id===Number(ag.procedimentoId));
           const val=proc?.valor||0;
-          return(<div key={ag.id} className="grid-row" style={{gridTemplateColumns:"90px 60px 1fr 130px 110px 130px",background:i%2?"var(--gr)":"",cursor:"pointer"}} onClick={()=>{}}>
+          return(<div key={ag.id} className="grid-row" style={{gridTemplateColumns:"90px 60px 1fr 130px 110px 130px",background:i%2?"var(--gr)":""}}>
             <div style={{fontSize:11,fontWeight:700}}>{brDate(ag.data)}</div>
-            <div style={{fontSize:11,color:"#60a5fa",fontWeight:800}}>{ag.horarioSessao}</div>
+            <div style={{fontSize:11,color:"#a78bfa",fontWeight:800}}>{ag.horarioSessao}</div>
             <div style={{fontSize:11,fontWeight:700}}>{pac?.nome||"—"}</div>
             <div style={{fontSize:11,color:"var(--mt)"}}>{prof?.nome||"—"}</div>
             <div style={{fontSize:11}}>{ag.convenio||"—"}</div>
@@ -4874,9 +4875,9 @@ function MainAgenda({auth,agenda,setAgenda,pacientes,profissionais,salas,filiais
     if(ag.tipo==="reuniao"){
       const nPart=(ag.participantesIds||[]).length;
       return(<div onClick={e=>{e.stopPropagation();onAbrirSessao&&onAbrirSessao(ag);}}
-        style={{background:"#3b82f618",borderLeft:"3px solid #3b82f6",padding:"2px 5px",borderRadius:3,cursor:"pointer",lineHeight:1.3,marginBottom:1}}
+        style={{background:"#7c6af718",borderLeft:"3px solid #7c6af7",padding:"2px 5px",borderRadius:3,cursor:"pointer",lineHeight:1.3,marginBottom:1}}
         title={"🤝 "+ag.tituloReuniao+" · "+ag.horarioSessao+(nPart?" · "+nPart+" participante(s)":"")}>
-        <div style={{fontSize:10,fontWeight:900,color:"#60a5fa",display:"flex",alignItems:"center",gap:3}}>
+        <div style={{fontSize:10,fontWeight:900,color:"#a78bfa",display:"flex",alignItems:"center",gap:3}}>
           <span>🤝</span><span>{ag.horarioSessao}</span>
         </div>
         <div style={{fontSize:9,color:"#93c5fd",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontWeight:700}}>{ag.tituloReuniao||"Reunião"}</div>
@@ -4904,7 +4905,7 @@ function MainAgenda({auth,agenda,setAgenda,pacientes,profissionais,salas,filiais
       <div><label>Sala</label><select value={fSala} onChange={e=>setFSala(e.target.value)} style={{minWidth:80}}><option value="">Todas</option>{salas.filter(s=>!fFilial||s.filialId===Number(fFilial)).map(s=><option key={s.id} value={s.id}>{s.nome}</option>)}</select></div>
       <div style={{marginLeft:"auto",display:"flex",gap:5,alignSelf:"flex-end",flexWrap:"wrap"}}>
         <div style={{display:"flex",borderRadius:6,overflow:"hidden",border:"1px solid var(--sc)"}}>
-          {[["mensal","📅 Mês"],["semanal","📊 Sem."],["diaria","📋 Dia"],["recepcao","🏥 Recepção"],["lista","☰ Lista"]].map(([v,l])=>(<button key={v} onClick={()=>setView(v)} style={{padding:"4px 8px",fontSize:10,fontWeight:800,background:view===v?"#3b82f6":"transparent",color:view===v?"#fff":"var(--mt)",border:"none",cursor:"pointer"}}>{l}</button>))}
+          {[["mensal","📅 Mês"],["semanal","📊 Sem."],["diaria","📋 Dia"],["recepcao","🏥 Recepção"],["lista","☰ Lista"]].map(([v,l])=>(<button key={v} onClick={()=>setView(v)} style={{padding:"4px 8px",fontSize:10,fontWeight:800,background:view===v?"#7c6af7":"transparent",color:view===v?"#fff":"var(--mt)",border:"none",cursor:"pointer"}}>{l}</button>))}
         </div>
         <button className="btn secondary" style={{position:"relative"}} onClick={()=>setShowAlertas(v=>!v)}>
           🔔{pend.length>0&&<span style={{position:"absolute",top:-4,right:-4,background:"#ef4444",color:"#fff",borderRadius:"50%",fontSize:9,width:15,height:15,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900}}>{pend.length}</span>}
@@ -4939,8 +4940,8 @@ function MainAgenda({auth,agenda,setAgenda,pacientes,profissionais,salas,filiais
         <button className="btn secondary small" onClick={()=>{const d=new Date(selDate+"T12:00:00");d.setDate(d.getDate()+7);setSelDate(ymd(d));}}>Próx. ›</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6}}>
-        {weekDays.map(ds=>{const evs=evOn(ds);const isT=ds===hoje_str;return(<div key={ds} style={{background:"var(--card)",border:"1px solid var(--sc)",borderRadius:8,padding:7,borderTop:"3px solid "+(isT?"#3b82f6":"var(--sc)")}}>
-          <div style={{fontWeight:800,fontSize:10,color:isT?"#3b82f6":"var(--mt)",marginBottom:5}}>{["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][new Date(ds+"T12:00:00").getDay()]} {brDate(ds).slice(0,5)}</div>
+        {weekDays.map(ds=>{const evs=evOn(ds);const isT=ds===hoje_str;return(<div key={ds} style={{background:"var(--card)",border:"1px solid var(--sc)",borderRadius:8,padding:7,borderTop:"3px solid "+(isT?"#7c6af7":"var(--sc)")}}>
+          <div style={{fontWeight:800,fontSize:10,color:isT?"#7c6af7":"var(--mt)",marginBottom:5}}>{["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][new Date(ds+"T12:00:00").getDay()]} {brDate(ds).slice(0,5)}</div>
           {evs.length===0&&<div style={{fontSize:9,color:"var(--lb)",textAlign:"center",padding:"8px 0"}}>—</div>}
           {evs.map(ag=><CardSessao key={ag.id} ag={ag}/>)}
         </div>);})}
@@ -4954,7 +4955,7 @@ function MainAgenda({auth,agenda,setAgenda,pacientes,profissionais,salas,filiais
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:5}}>
         {TURNOS_H.map(hora=>{const evs=evOn(selDate).filter(a=>a.horarioSessao===hora);return(<div key={hora} style={{display:"flex",gap:8,alignItems:"flex-start",borderBottom:"1px solid var(--sc)",paddingBottom:4}}>
-          <div style={{width:45,fontWeight:800,fontSize:11,color:"#60a5fa",flexShrink:0,paddingTop:2}}>{hora}</div>
+          <div style={{width:45,fontWeight:800,fontSize:11,color:"#a78bfa",flexShrink:0,paddingTop:2}}>{hora}</div>
           <div style={{flex:1,display:"flex",flexWrap:"wrap",gap:5}}>
             {evs.length===0?<span style={{fontSize:10,color:"var(--lb)"}}>—</span>:evs.map(ag=>{
               const prof=profissionais.find(p=>p.id===Number(ag.profissionalId));const pac=pacientes.find(p=>p.id===Number(ag.pacienteId));
@@ -4992,14 +4993,14 @@ function MainAgenda({auth,agenda,setAgenda,pacientes,profissionais,salas,filiais
             <button className="btn secondary small" onClick={()=>{const d=new Date(selDate+"T12:00:00");d.setDate(d.getDate()+1);setSelDate(ymd(d));}}>›</button>
           </div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[[evsDia.length,"TOTAL","#60a5fa"],[agendPend,"AGUARDANDO","#f59e0b"],[emCurso,"EM ATEND.","#a78bfa"],[atend,"ATENDIDOS","#34d399"],[faltas,"FALTAS","#f87171"]].map(([v,t,cor])=>(
+            {[[evsDia.length,"TOTAL","#a78bfa"],[agendPend,"AGUARDANDO","#f59e0b"],[emCurso,"EM ATEND.","#a78bfa"],[atend,"ATENDIDOS","#34d399"],[faltas,"FALTAS","#f87171"]].map(([v,t,cor])=>(
               <div key={t} style={{padding:"4px 10px",borderRadius:8,background:cor+"15",border:"1px solid "+cor+"40",textAlign:"center",minWidth:70}}>
                 <div style={{fontSize:16,fontWeight:900,color:cor,lineHeight:1}}>{v}</div>
                 <div style={{fontSize:8,fontWeight:900,color:"var(--mt)",letterSpacing:.5,marginTop:1}}>{t}</div>
               </div>
             ))}
-            {reunioesDia.length>0&&<div style={{padding:"4px 10px",borderRadius:8,background:"#3b82f615",border:"1px solid #3b82f640",textAlign:"center",minWidth:70}}>
-              <div style={{fontSize:16,fontWeight:900,color:"#60a5fa",lineHeight:1}}>{reunioesDia.length}</div>
+            {reunioesDia.length>0&&<div style={{padding:"4px 10px",borderRadius:8,background:"#7c6af715",border:"1px solid #7c6af740",textAlign:"center",minWidth:70}}>
+              <div style={{fontSize:16,fontWeight:900,color:"#a78bfa",lineHeight:1}}>{reunioesDia.length}</div>
               <div style={{fontSize:8,fontWeight:900,color:"var(--mt)",letterSpacing:.5,marginTop:1}}>REUNIÕES</div>
             </div>}
           </div>
@@ -5015,17 +5016,17 @@ function MainAgenda({auth,agenda,setAgenda,pacientes,profissionais,salas,filiais
             return(<div key={hora} style={{display:"flex",gap:0,borderBottom:"1px solid var(--db)"}}>
               {/* Coluna hora */}
               <div style={{width:52,flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",paddingTop:8,background:"var(--sx)",borderRight:"2px solid var(--sc)"}}>
-                <div style={{fontWeight:900,fontSize:13,color:"#60a5fa"}}>{hora}</div>
+                <div style={{fontWeight:900,fontSize:13,color:"#a78bfa"}}>{hora}</div>
                 <div style={{fontSize:9,color:"var(--mt)",marginTop:2,fontWeight:700}}>{total} sess.</div>
               </div>
               {/* Cards */}
               <div style={{flex:1,display:"flex",flexWrap:"wrap",gap:5,padding:"6px 8px"}}>
                 {reuns.map(ag=>(
                   <div key={ag.id} onClick={()=>onAbrirSessao&&onAbrirSessao(ag)}
-                    style={{display:"flex",alignItems:"stretch",borderRadius:7,overflow:"hidden",border:"1px solid #3b82f640",cursor:"pointer",minWidth:160,maxWidth:220,flex:"1 1 160px",background:"var(--card)"}}>
-                    <div style={{width:5,background:"#3b82f6",flexShrink:0}}/>
+                    style={{display:"flex",alignItems:"stretch",borderRadius:7,overflow:"hidden",border:"1px solid #7c6af740",cursor:"pointer",minWidth:160,maxWidth:220,flex:"1 1 160px",background:"var(--card)"}}>
+                    <div style={{width:5,background:"#7c6af7",flexShrink:0}}/>
                     <div style={{padding:"5px 8px",flex:1,minWidth:0}}>
-                      <div style={{fontSize:10,fontWeight:900,color:"#60a5fa"}}>🤝 Reunião</div>
+                      <div style={{fontSize:10,fontWeight:900,color:"#a78bfa"}}>🤝 Reunião</div>
                       <div style={{fontSize:11,fontWeight:700,color:"var(--tx)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ag.tituloReuniao||"Reunião"}</div>
                       <div style={{fontSize:9,color:"var(--mt)",marginTop:1}}>{(ag.participantesIds||[]).length} participante(s)</div>
                     </div>
@@ -5082,7 +5083,7 @@ function MainAgenda({auth,agenda,setAgenda,pacientes,profissionais,salas,filiais
         {filtered.filter(a=>a.data>=selDate).sort((a,b)=>a.data.localeCompare(b.data)||a.horarioSessao.localeCompare(b.horarioSessao)).slice(0,100).map((ag,i)=>{
           const prof=profissionais.find(p=>p.id===Number(ag.profissionalId));const pac=pacientes.find(p=>p.id===Number(ag.pacienteId));const st=STATUS_AG[ag.status]||{label:ag.status,color:"#64748b",icon:"📋"};
           return(<div key={ag.id} className="grid-row" style={{gridTemplateColumns:"90px 70px 1fr 1fr 90px 100px",background:i%2?"var(--gr)":"",cursor:"pointer"}} onClick={()=>onAbrirSessao&&onAbrirSessao(ag)}>
-            <div style={{fontWeight:700,fontSize:11}}>{brDate(ag.data)}</div><div style={{fontWeight:800,color:"#60a5fa",fontSize:11}}>{ag.horarioSessao}</div>
+            <div style={{fontWeight:700,fontSize:11}}>{brDate(ag.data)}</div><div style={{fontWeight:800,color:"#a78bfa",fontSize:11}}>{ag.horarioSessao}</div>
             <div style={{fontWeight:700,fontSize:11}}>{pac?.nome||"—"}</div><div style={{fontSize:11,color:"var(--mt)"}}>{profShortName(prof)}</div>
             <div><span style={{padding:"1px 5px",borderRadius:20,fontSize:9,fontWeight:800,background:st.color+"25",color:st.color}}>{st.icon} {st.label}</span></div>
             <div style={{fontSize:11,color:"var(--mt)"}}>{ag.convenio||"—"}</div>
@@ -5097,381 +5098,6 @@ function MainAgenda({auth,agenda,setAgenda,pacientes,profissionais,salas,filiais
 // ═══════════════════════════════════════════════════════════════════════════════
 // GESTÃO — Processos & Indicadores
 // ═══════════════════════════════════════════════════════════════════════════════
-function RelatoriosTab({agenda,pacientes,profissionais,procedimentos,showToast}){
-  const [perRel_rt,setPerRel_rt]=useState("semana");
-  const [fProfRel_rt,setFProfRel_rt]=useState("");
-  const diasBackR={hoje:1,semana:7,mes:30,trimestre:90}[perRel]||7;
-  const dtLimR=new Date();dtLimR.setDate(dtLimR.getDate()-diasBackR);
-  const agRel=agenda.filter(a=>{
-  const dt=new Date(a.data);if(dt<dtLimR)return false;
-  if(fProfRel_rt&&String(a.profissionalId)!==String(fProfRel))return false;
-  return true;
-  });
-  const statusCountR=Object.keys(STATUS_AG).reduce((acc,k)=>({...acc,[k]:agRel.filter(a=>a.status===k).length}),{});
-  const espMapR={};
-  agRel.forEach(a=>{const p=profissionais.find(x=>x.id===Number(a.profissionalId));const esp=(p?.especialidades||[p?.especialidade])[0]||"Outros";espMapR[esp]=(espMapR[esp]||0)+1;});
-  const espArrR=Object.entries(espMapR).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const maxEspR=Math.max(1,...espArrR.map(e=>e[1]));
-  const fatCountR=agRel.filter(a=>a.status==="faturado").length;
-  const receitaR=agRel.filter(a=>a.status==="faturado").reduce((s,a)=>{const p=procedimentos.find(x=>x.id===Number(a.procedimentoId));return s+(p?.valor||0);},0);
-  const dayL_rt=[],dayA_rt=[],dayF_rt=[];
-  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=ymd(d);dayL_rt.push(DIAS_SEMANA[d.getDay()].slice(0,3));dayA_rt.push(agenda.filter(a=>a.data===ds&&["atendido","faturado"].includes(a.status)).length);dayF_rt.push(agenda.filter(a=>a.data===ds&&["faltou","faltou_pacote"].includes(a.status)).length);}
-  const maxDR=Math.max(1,...dayA_rt,...dayF_rt);
-  const exportAgRel=()=>{
-  const cab=["Data","Horário","Paciente","Profissional","Especialidade","Convênio","Status","Nº Autorização"];
-  const linhas=agRel.map(a=>{const pac=pacientes.find(p=>p.id===Number(a.pacienteId));const pr=profissionais.find(p=>p.id===Number(a.profissionalId));return[brDate(a.data),a.horarioSessao,pac?.nome||"",pr?.nome||"",(pr?.especialidades||[""])[0]||"",a.convenio||"",STATUS_AG[a.status]?.label||a.status,a.numAutorizacao||""];});
-  exportCSV("agenda_"+perRel_rt,cab,linhas);
-  if(showToast)showToast("📥 CSV exportado","ok");
-  };
-  const exportExcelRel=()=>{
-  if(typeof XLSX==="undefined")return;
-  const wb=XLSX.utils.book_new();
-  const rows=agRel.map(a=>{const pac=pacientes.find(p=>p.id===Number(a.pacienteId));const pr=profissionais.find(p=>p.id===Number(a.profissionalId));return{Data:brDate(a.data),Horário:a.horarioSessao,Paciente:pac?.nome||"—",Profissional:pr?.nome||"—",Status:STATUS_AG[a.status]?.label||a.status,Convênio:a.convenio||""};});
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Agenda");
-  const pacRows=pacientes.map(p=>({Nome:p.nome,CPF:maskCPF(p.cpf||""),Nascimento:brDate(p.nascimento||""),Convênio:p.convenio||"",Plano:p.plano||""}));
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(pacRows),"Pacientes");
-  XLSX.writeFile(wb,"Cuide_Relatorio_"+hoje_str+".xlsx");
-  if(showToast)showToast("✅ Excel gerado","ok");
-  };
-  return(<div>
-  <div style={{display:"flex",gap:8,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}>
-    <select value={perRel_rt} onChange={e=>setPerRel_rt(e.target.value)} style={{fontSize:12}}>
-      <option value="hoje">Hoje</option><option value="semana">Últimos 7 dias</option>
-      <option value="mes">Último mês</option><option value="trimestre">Último trimestre</option>
-    </select>
-    <select value={fProfRel_rt} onChange={e=>setFProfRel_rt(e.target.value)} style={{fontSize:12}}>
-      <option value="">Todos profissionais</option>
-      {profissionais.map(p=><option key={p.id} value={p.id}>{profShort(p.nome)}</option>)}
-    </select>
-    <div style={{marginLeft:"auto",display:"flex",gap:6}}>
-      <button className="btn secondary" style={{fontSize:11}} onClick={exportAgRel}>📥 CSV Agenda</button>
-      <button className="btn primary" style={{fontSize:11,background:"#166534",borderColor:"#166534"}} onClick={exportExcelRel}>📊 Exportar Excel</button>
-    </div>
-  </div>
-  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:14}}>
-    <div className="card" style={{padding:16,gridColumn:"span 2"}}>
-      <div style={{fontWeight:900,fontSize:13,marginBottom:10}}>📈 Atendidos vs Faltas — Últimos 7 dias</div>
-      <div style={{display:"flex",alignItems:"flex-end",gap:6,height:90}}>
-        {dayL_rt.map((d,i)=>(
-          <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-            <div style={{display:"flex",gap:1,alignItems:"flex-end",height:70}}>
-              <div style={{width:10,background:"#34d399",borderRadius:"3px 3px 0 0",height:Math.max(2,Math.round((dayA_rt[i]/maxDR)*60))+"px"}} title={"Atend: "+dayA_rt[i]}/>
-              <div style={{width:10,background:"#f87171",borderRadius:"3px 3px 0 0",height:Math.max(2,Math.round((dayF_rt[i]/maxDR)*60))+"px"}} title={"Faltas: "+dayF_rt[i]}/>
-            </div>
-            <div style={{fontSize:9,color:"var(--mt)",fontWeight:700}}>{d}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{display:"flex",gap:12,marginTop:6,fontSize:10,color:"var(--mt)"}}>
-        <span><span style={{display:"inline-block",width:8,height:8,background:"#34d399",borderRadius:2,marginRight:3}}/>Atendidos</span>
-        <span><span style={{display:"inline-block",width:8,height:8,background:"#f87171",borderRadius:2,marginRight:3}}/>Faltas</span>
-      </div>
-    </div>
-    <div className="card" style={{padding:16}}>
-      <div style={{fontWeight:900,fontSize:13,marginBottom:10}}>🔵 Distribuição de Status</div>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <DonutChart size={90} data={Object.entries(STATUS_AG).filter(([k])=>statusCountR[k]>0).map(([k,v])=>({v:statusCountR[k],c:v.color}))}/>
-        <div style={{flex:1}}>
-          {Object.entries(STATUS_AG).filter(([k])=>statusCountR[k]>0).slice(0,6).map(([k,v])=>(
-            <div key={k} style={{display:"flex",alignItems:"center",gap:5,marginBottom:4,fontSize:11}}>
-              <span style={{width:8,height:8,borderRadius:"50%",background:v.color,flexShrink:0,display:"inline-block"}}/>
-              <span style={{color:"var(--mt)",flex:1}}>{v.label}</span>
-              <b>{statusCountR[k]}</b>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-    <div className="card" style={{padding:16}}>
-      <div style={{fontWeight:900,fontSize:13,marginBottom:10}}>💰 Faturamento do Período</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-        <div style={{background:"#052e1c30",borderRadius:8,padding:"10px 12px"}}>
-          <div style={{fontSize:10,color:"var(--mt)",fontWeight:800}}>FATURADAS</div>
-          <div style={{fontSize:22,fontWeight:900,color:"#34d399"}}>{fatCountR}</div>
-        </div>
-        <div style={{background:"#1e3a5f30",borderRadius:8,padding:"10px 12px"}}>
-          <div style={{fontSize:10,color:"var(--mt)",fontWeight:800}}>RECEITA EST.</div>
-          <div style={{fontSize:16,fontWeight:900,color:"#60a5fa"}}>{brl(receitaR)}</div>
-        </div>
-      </div>
-    </div>
-    <div className="card" style={{padding:16}}>
-      <div style={{fontWeight:900,fontSize:13,marginBottom:10}}>👩‍⚕️ Sessões por Especialidade</div>
-      {espArrR.length===0&&<div className="muted" style={{fontSize:12}}>Sem dados no período.</div>}
-      {espArrR.map(([esp,cnt])=>(
-        <div key={esp} style={{marginBottom:7}}>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:2}}>
-            <span style={{color:"var(--mt)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:160}}>{esp}</span>
-            <span style={{fontWeight:900,color:espCor(esp)}}>{cnt}</span>
-          </div>
-          <div style={{height:5,borderRadius:3,background:"var(--sx)",overflow:"hidden"}}>
-            <div style={{width:Math.round((cnt/maxEspR)*100)+"%",height:"100%",background:espCor(esp),borderRadius:3}}/>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-  </div>);
-  }
-
-function AtividadesTab({atividades,profissionais}){
-  const [fUser,setFUser]=useState("");
-  const [fAcao,setFAcao]=useState("");
-  const [fData,setFData]=useState("");
-  const lista=(atividades||[]).slice().reverse();
-  const users=[...new Set(lista.map(a=>a.usuario).filter(Boolean))];
-  const acoes=[...new Set(lista.map(a=>a.acao).filter(Boolean))];
-  const filtradas=lista.filter(a=>
-  (!fUser||a.usuario===fUser)&&
-  (!fAcao||a.acao===fAcao)&&
-  (!fData||a.data===fData)
-  );
-  return(<div>
-  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14,alignItems:"center"}}>
-    <input type="date" value={fData} onChange={e=>setFData(e.target.value)} style={{width:140,fontSize:12}}/>
-    <select value={fUser} onChange={e=>setFUser(e.target.value)} style={{minWidth:160,fontSize:12}}>
-      <option value="">Todos os usuários</option>
-      {users.map(u=><option key={u}>{u}</option>)}
-    </select>
-    <select value={fAcao} onChange={e=>setFAcao(e.target.value)} style={{minWidth:140,fontSize:12}}>
-      <option value="">Todas as ações</option>
-      {acoes.map(a=><option key={a}>{a}</option>)}
-    </select>
-    {(fUser||fAcao||fData)&&<button className="btn secondary small" onClick={()=>{setFUser("");setFAcao("");setFData("");}}>✕ Limpar</button>}
-    <span style={{marginLeft:"auto",fontSize:11,color:"var(--mt)"}}>{filtradas.length} registro(s)</span>
-  </div>
-  <div className="card" style={{overflow:"hidden"}}>
-    <div className="grid-header" style={{gridTemplateColumns:"95px 58px 150px 120px 1fr"}}>
-      <div>Data</div><div>Hora</div><div>Usuário</div><div>Ação</div><div>Detalhe</div>
-    </div>
-    {filtradas.length===0&&<div style={{padding:18,textAlign:"center"}} className="muted">Nenhuma atividade registrada no sistema.</div>}
-    {filtradas.map((a,i)=>(
-      <div key={a.id||i} className="grid-row" style={{gridTemplateColumns:"95px 58px 150px 120px 1fr",background:i%2?"var(--gr)":""}}>
-        <div style={{fontSize:11}}>{brDate(a.data)}</div>
-        <div style={{fontSize:11,color:"#60a5fa",fontWeight:700}}>{a.hora}</div>
-        <div style={{fontSize:11,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.usuario}</div>
-        <div><span style={{padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:800,background:"#3b82f620",color:"#60a5fa"}}>{a.acao}</span></div>
-        <div style={{fontSize:11,color:"var(--mt)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.detalhe}</div>
-      </div>
-    ))}
-  </div>
-  </div>);
-  }
-
-function ImportarTab({agenda,setAgenda,pacientes,setPacientes,profissionais,setProfissionais,auth,showToast}){
-  if(auth.role!=="administrador")return(<div style={{padding:48,textAlign:"center",color:"var(--mt)",fontSize:14}}>🔒 Acesso restrito ao Administrador.</div>);
-  const [tipo,setTipo]=useState("pacientes");
-  const [arquivo,setArquivo]=useState(null);
-  const [linhas,setLinhas]=useState([]);
-  const [cabecalho,setCabecalho]=useState([]);
-  const [mapa,setMapa]=useState({});
-  const [preview,setPreview]=useState([]);
-  const CAMPOS_PAC=["nome","nascimento","cpf","sexo","celular","convenio","plano","cep","logradouro","numero","bairro","cidade","estado","resp1Nome","resp1Cpf","resp1Whatsapp","infoImportantes"];
-  const CAMPOS_PROF=["nome","usuario","senha","role","especialidade"];
-  const CAMPOS_AG=["pacienteNome","profissionalNome","data","horarioSessao","tempoSessao","convenio","status"];
-  const campos=tipo==="pacientes"?CAMPOS_PAC:tipo==="profissionais"?CAMPOS_PROF:CAMPOS_AG;
-  const resetar=()=>{setLinhas([]);setCabecalho([]);setPreview([]);setMapa({});setArquivo(null);};
-  const lerArquivo=e=>{
-    const f=e.target.files[0];if(!f)return;setArquivo(f.name);
-    const r=new FileReader();
-    r.onload=ev=>{
-      const txt=ev.target.result;
-      const rows=txt.split(/\r?\n/).filter(l=>l.trim());
-      if(rows.length<2)return;
-      const sep=rows[0].includes(";")?";":",";
-      const cab=rows[0].split(sep).map(x=>x.trim().replace(/^["']|["']$/g,""));
-      const ls=rows.slice(1).map(row=>row.split(sep).map(x=>x.trim().replace(/^["']|["']$/g,"")));
-      setCabecalho(cab);setLinhas(ls);setPreview(ls.slice(0,3));
-      const autoMapa={};
-      cab.forEach((h,i)=>{const hL=h.toLowerCase();const campo=campos.find(c=>c.toLowerCase()===hL||hL.includes(c.toLowerCase()));if(campo)autoMapa[campo]=i;});
-      setMapa(autoMapa);
-    };
-    r.readAsText(f,"UTF-8");
-  };
-  const importarDados=()=>{
-    if(!linhas.length)return;
-    if(tipo==="pacientes"){
-      const novos=linhas.map((l,idx)=>{
-        const get=c=>mapa[c]!==undefined?l[mapa[c]]||"":"";
-        return{id:Date.now()+idx,nome:get("nome"),nascimento:get("nascimento"),cpf:rawD(get("cpf")),sexo:get("sexo"),celular:rawD(get("celular")),convenio:get("convenio"),plano:get("plano"),cep:get("cep"),logradouro:get("logradouro"),numero:get("numero"),bairro:get("bairro"),cidade:get("cidade"),estado:get("estado"),resp1Nome:get("resp1Nome"),resp1Cpf:rawD(get("resp1Cpf")),resp1Whatsapp:rawD(get("resp1Whatsapp")),infoImportantes:get("infoImportantes"),arquivos:[]};
-      }).filter(p=>p.nome);
-      setPacientes(prev=>[...prev,...novos]);
-      if(showToast)showToast("✅ "+novos.length+" pacientes importados com sucesso","ok");resetar();
-    } else if(tipo==="profissionais"){
-      const novos=linhas.map((l,idx)=>{
-        const get=c=>mapa[c]!==undefined?l[mapa[c]]||"":"";
-        return{id:Date.now()+idx,nome:get("nome"),usuario:rawD(get("usuario")),senha:get("senha"),role:get("role")||"profissional",especialidades:[get("especialidade")].filter(Boolean),especialidade:get("especialidade"),temposAtendimento:[50],escala:{},filiaisAtendimento:[],filialAcesso:[],carimbo:null};
-      }).filter(p=>p.nome);
-      setProfissionais(prev=>[...prev,...novos]);
-      if(showToast)showToast("✅ "+novos.length+" profissionais importados","ok");resetar();
-    } else {
-      const novos=linhas.map((l,idx)=>{
-        const get=c=>mapa[c]!==undefined?l[mapa[c]]||"":"";
-        const pac=pacientes.find(p=>p.nome.toLowerCase()===get("pacienteNome").toLowerCase());
-        const prof=profissionais.find(p=>p.nome.toLowerCase()===get("profissionalNome").toLowerCase());
-        return{id:Date.now()+idx,pacienteId:pac?.id||null,profissionalId:prof?.id||null,data:get("data"),horarioSessao:get("horarioSessao")||"08:00",horarioFimSessao:"",tempoSessao:Number(get("tempoSessao"))||50,status:get("status")||"agendado",convenio:get("convenio")||"",tipo:"sessao"};
-      }).filter(a=>a.data);
-      setAgenda(prev=>[...prev,...novos]);
-      if(showToast)showToast("✅ "+novos.length+" agendamentos importados","ok");resetar();
-    }
-  };
-  return(<div>
-    <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
-      {["pacientes","profissionais","agendamentos"].map(t=>(
-        <button key={t} className={"btn "+(tipo===t?"primary":"secondary")} onClick={()=>{setTipo(t);resetar();}} style={{fontSize:11,textTransform:"capitalize"}}>{t}</button>
-      ))}
-    </div>
-    <div className="section-box" style={{marginBottom:14}}>
-      <div className="section-title">📂 Arquivo CSV</div>
-      <div style={{fontSize:11,color:"var(--mt)",marginBottom:8}}>Selecione um arquivo .csv com cabeçalho na primeira linha. Separador: vírgula ou ponto-e-vírgula.</div>
-      <label className="btn secondary" style={{cursor:"pointer",fontSize:11}}>
-        📂 Selecionar arquivo {arquivo&&<span style={{marginLeft:6,color:"#34d399"}}>✓ {arquivo}</span>}
-        <input type="file" accept=".csv,.txt" onChange={lerArquivo} style={{display:"none"}}/>
-      </label>
-      {arquivo&&<button className="btn secondary small" onClick={resetar} style={{marginLeft:8}}>✕ Limpar</button>}
-    </div>
-    {cabecalho.length>0&&<>
-      <div className="section-box" style={{marginBottom:14}}>
-        <div className="section-title">🗂️ Mapeamento de Colunas</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
-          {campos.map(campo=>(
-            <div key={campo}>
-              <label>{campo}</label>
-              <select value={mapa[campo]!==undefined?mapa[campo]:""} onChange={e=>setMapa(m=>({...m,[campo]:e.target.value===""?undefined:Number(e.target.value)}))}>
-                <option value="">— ignorar —</option>
-                {cabecalho.map((h,i)=><option key={i} value={i}>{h}</option>)}
-              </select>
-            </div>
-          ))}
-        </div>
-      </div>
-      {preview.length>0&&<div className="section-box" style={{marginBottom:14}}>
-        <div className="section-title">👁️ Pré-visualização (3 primeiras linhas)</div>
-        <div style={{overflowX:"auto"}}>
-          <table style={{width:"100%",fontSize:11,borderCollapse:"collapse"}}>
-            <thead><tr>{cabecalho.map((h,i)=><th key={i} style={{padding:"4px 8px",background:"var(--sx)",borderBottom:"1px solid var(--cb)",textAlign:"left",fontWeight:700}}>{h}</th>)}</tr></thead>
-            <tbody>{preview.map((row,i)=><tr key={i}>{row.map((cell,j)=><td key={j} style={{padding:"4px 8px",borderBottom:"1px solid var(--cb)",color:"var(--mt)"}}>{cell}</td>)}</tr>)}</tbody>
-          </table>
-        </div>
-      </div>}
-      <div style={{display:"flex",gap:8}}>
-        <button className="btn secondary" onClick={resetar}>✕ Cancelar</button>
-        <button className="btn primary" onClick={importarDados}>📥 Importar {linhas.length} registro(s)</button>
-      </div>
-    </>}
-  </div>);
-}
-
-function ExportarTab({agenda,pacientes,profissionais,procedimentos,salas,filiais,chamados,showToast}){
-  const [formato,setFormato]=useState("xlsx");
-  const [modulos,setModulos]=useState({agenda:true,pacientes:true,profissionais:false,financeiro:false,chamados:false,salas:false});
-  const [periodoEx,setPeriodoEx]=useState("mes");
-  const toggleMod=k=>setModulos(m=>({...m,[k]:!m[k]}));
-  const diasBack={hoje:1,semana:7,mes:30,trimestre:90,tudo:3650}[periodoEx]||30;
-  const dtLim=new Date();dtLim.setDate(dtLim.getDate()-diasBack);
-  const agEx=periodoEx==="tudo"?agenda:agenda.filter(a=>new Date(a.data)>=dtLim);
-  const exportar=()=>{
-    if(typeof XLSX==="undefined"){if(showToast)showToast("❌ Biblioteca XLSX não carregada","err");return;}
-    const wb=XLSX.utils.book_new();
-    if(modulos.agenda){
-      const rows=agEx.map(a=>{
-        const pac=pacientes.find(p=>p.id===Number(a.pacienteId));
-        const pr=profissionais.find(p=>p.id===Number(a.profissionalId));
-        const proc=procedimentos.find(p=>p.id===Number(a.procedimentoId));
-        return{Data:brDate(a.data),Horario:a.horarioSessao,"Hora Fim":a.horarioFimSessao||"",Paciente:pac?.nome||"—",Profissional:pr?.nome||"—",Especialidade:(pr?.especialidades||[""])[0]||"",Procedimento:proc?.nome||"",Convenio:a.convenio||"",Status:STATUS_AG[a.status]?.label||a.status,"Nr Autorizacao":a.numAutorizacao||"",Observacoes:a.observacoes||""};
-      });
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Agenda");
-    }
-    if(modulos.pacientes){
-      const rows=pacientes.map(p=>({Nome:p.nome,CPF:maskCPF(p.cpf||""),Nascimento:brDate(p.nascimento||""),Sexo:p.sexo||"",Celular:maskPhone(p.celular||""),Email:p.email||"",Convenio:p.convenio||"",Plano:p.plano||"",Logradouro:p.logradouro||"",Numero:p.numero||"",Bairro:p.bairro||"",Cidade:p.cidade||"",Estado:p.estado||"",Responsavel:p.resp1Nome||"","Cel Responsavel":p.resp1Whatsapp||""}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Pacientes");
-    }
-    if(modulos.profissionais){
-      const rows=profissionais.map(p=>({Nome:p.nome,CPF:maskCPF(p.usuario||""),Especialidades:(p.especialidades||[]).join(", "),Perfil:PERFIL_LABEL[p.role]||p.role,"Nivel Repasse":p.nivelRepasse||"","Forma Pgto":p.formaPagamento||"",Email:p.email||"",Celular:maskPhone(p.celular||"")}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Profissionais");
-    }
-    if(modulos.financeiro){
-      const fat=agEx.filter(a=>a.status==="faturado");
-      const rows=fat.map(a=>{
-        const pac=pacientes.find(p=>p.id===Number(a.pacienteId));
-        const pr=profissionais.find(p=>p.id===Number(a.profissionalId));
-        const proc=procedimentos.find(p=>p.id===Number(a.procedimentoId));
-        const valor=proc?.valor||0;
-        const nivelKey=(pr?.nivelRepasse||"Pleno").replace("ú","u");
-        const pct=(proc?.niveisRepasse||{})[nivelKey]||45;
-        const repasse=Math.round(valor*(pct/100)*100)/100;
-        return{Data:brDate(a.data),Paciente:pac?.nome||"—",Profissional:pr?.nome||"—",Procedimento:proc?.nome||"","Valor (R$)":valor,"Repasse %":pct,"Repasse (R$)":repasse,"Valor Clinica (R$)":Math.round((valor-repasse)*100)/100,Convenio:a.convenio||""};
-      });
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Financeiro");
-    }
-    if(modulos.chamados){
-      const rows=(chamados||[]).map(ch=>({Titulo:ch.titulo,Setor:ch.setor,Status:ch.status,Prioridade:ch.prioridade||"Normal",Descricao:ch.descricao||"",Abertura:brDate(ch.data||"")}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Chamados");
-    }
-    if(modulos.salas){
-      const rows=(salas||[]).map(s=>{const f=filiais.find(x=>x.id===s.filialId);return{Sala:s.nome,Filial:f?.nome||"",Especialidade:s.especialidade||"","Custo Mensal":s.custoMensal||0,Ativa:s.ativa===false?"Não":"Sim"};});
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Salas");
-    }
-    if(wb.SheetNames.length===0){if(showToast)showToast("⚠️ Selecione ao menos um módulo","warn");return;}
-    const ts=hoje_str.replace(/-/g,"");
-    XLSX.writeFile(wb,"Cuide_Exportacao_"+ts+".xlsx");
-    if(showToast)showToast("✅ Arquivo exportado com sucesso","ok");
-  };
-  const MODS=[
-    {k:"agenda",label:"📅 Agenda",desc:"Agendamentos do período selecionado"},
-    {k:"pacientes",label:"👤 Pacientes",desc:"Cadastro completo de pacientes"},
-    {k:"profissionais",label:"🩺 Profissionais",desc:"Cadastro de profissionais"},
-    {k:"financeiro",label:"💰 Financeiro",desc:"Sessões faturadas com repasse"},
-    {k:"chamados",label:"📨 Chamados",desc:"Todos os chamados do sistema"},
-    {k:"salas",label:"🏢 Salas",desc:"Salas e filiais cadastradas"},
-  ];
-  return(<div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:20}}>
-      <div className="card" style={{padding:16}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:12,color:"var(--tx)"}}>📦 Módulos a exportar</div>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {MODS.map(m=>(<label key={m.k} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:8,background:modulos[m.k]?"#3b82f610":"transparent",border:"1px solid "+(modulos[m.k]?"#3b82f640":"var(--cpb)"),cursor:"pointer",transition:".15s"}}>
-            <input type="checkbox" checked={!!modulos[m.k]} onChange={()=>toggleMod(m.k)} style={{width:15,height:15,accentColor:"#3b82f6"}}/>
-            <div style={{flex:1}}>
-              <div style={{fontWeight:700,fontSize:12,color:modulos[m.k]?"#60a5fa":"var(--tx)"}}>{m.label}</div>
-              <div style={{fontSize:10,color:"var(--mt)",marginTop:1}}>{m.desc}</div>
-            </div>
-            {modulos[m.k]&&<span style={{fontSize:9,fontWeight:900,color:"#3b82f6",background:"#3b82f620",padding:"1px 6px",borderRadius:10}}>✓</span>}
-          </label>))}
-        </div>
-      </div>
-      <div className="card" style={{padding:16}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:12}}>⚙️ Configurações</div>
-        <div style={{marginBottom:14}}>
-          <label style={{fontSize:11,fontWeight:700,color:"var(--mt)",display:"block",marginBottom:6}}>PERÍODO (para Agenda e Financeiro)</label>
-          <div style={{display:"flex",flexDirection:"column",gap:5}}>
-            {[["hoje","Hoje"],["semana","Últimos 7 dias"],["mes","Último mês"],["trimestre","Último trimestre"],["tudo","Tudo (sem filtro de data)"]].map(([v,l])=>(
-              <label key={v} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",fontSize:12}}>
-                <input type="radio" name="periodoEx" value={v} checked={periodoEx===v} onChange={()=>setPeriodoEx(v)} style={{accentColor:"#3b82f6"}}/>
-                <span style={{color:periodoEx===v?"var(--tx)":"var(--mt)",fontWeight:periodoEx===v?700:400}}>{l}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-        <div style={{background:"var(--sx)",borderRadius:8,padding:"10px 12px",fontSize:11,color:"var(--mt)"}}>
-          <div style={{fontWeight:700,color:"var(--tx)",marginBottom:4}}>📋 Resumo</div>
-          <div>Agenda: <b style={{color:"#60a5fa"}}>{agEx.filter(()=>modulos.agenda).length || (modulos.agenda?agEx.length:0)}</b> registros</div>
-          <div>Pacientes: <b style={{color:"#34d399"}}>{modulos.pacientes?pacientes.length:0}</b> registros</div>
-          <div>Profissionais: <b style={{color:"#a78bfa"}}>{modulos.profissionais?profissionais.length:0}</b> registros</div>
-          <div style={{marginTop:6,paddingTop:6,borderTop:"1px solid var(--sc)"}}>
-            Módulos selecionados: <b style={{color:"var(--tx)"}}>{Object.values(modulos).filter(Boolean).length}</b>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div style={{display:"flex",justifyContent:"flex-end"}}>
-      <button className="btn primary" style={{fontSize:13,padding:"10px 28px",background:"#166534",borderColor:"#166534",fontWeight:800}} onClick={exportar}>
-        📤 Exportar Excel
-      </button>
-    </div>
-  </div>);
-}
-
 function WaitingListPage({fila,setFila,pacientes,auth,showToast,agenda,profissionais}){
   const podeEditar=auth?.role==="agendamento"||auth?.role==="administrador"||auth?.role==="coordenador"||auth?.role==="coordenador_aba";
   const blank={pacienteId:"",especialidade:"",preferencia:"Manhã",observacao:"",convenio:"",profissionalDesejado:""};
@@ -5594,7 +5220,7 @@ function WaitingListPage({fila,setFila,pacientes,auth,showToast,agenda,profissio
             </div>
             <div style={{fontSize:11,color:"var(--mt)"}}>👩‍⚕️ {profShort(s.prof)}</div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:3}}>
-              <span style={{fontWeight:900,color:"#60a5fa",fontSize:12}}>📅 {s.data}</span>
+              <span style={{fontWeight:900,color:"#a78bfa",fontSize:12}}>📅 {s.data}</span>
               <span style={{fontSize:12,color:"#34d399",fontWeight:800}}>🕐 {s.horario}</span>
             </div>
             {s.convenio&&<div style={{fontSize:10,color:"#22c55e"}}>💳 {s.convenio}</div>}
@@ -5728,7 +5354,7 @@ function CaixinhaPage({caixa,setCaixa,pacientes,profissionais,procedimentos,agen
     showToast("📥 CSV exportado","ok");
   };
 
-  const COR_FP={Dinheiro:"#4ade80",Cartão:"#60a5fa",PIX:"#a78bfa"};
+  const COR_FP={Dinheiro:"#4ade80",Cartão:"#a78bfa",PIX:"#a78bfa"};
   const ICON_FP={Dinheiro:"💵",Cartão:"💳",PIX:"📱"};
 
   return(<div className="page-wrap">
@@ -5765,7 +5391,7 @@ function CaixinhaPage({caixa,setCaixa,pacientes,profissionais,procedimentos,agen
       <div style={{width:1,height:20,background:"var(--sc)"}}/>
       {["","Dinheiro","Cartão","PIX"].map(fp=>(
         <button key={fp} onClick={()=>setFormaPagFiltro(fp)}
-          style={{padding:"3px 10px",borderRadius:20,fontSize:11,border:"1.5px solid "+(formaPagFiltro===fp?(COR_FP[fp]||"#60a5fa"):"var(--cpb)"),background:formaPagFiltro===fp?(COR_FP[fp]||"#60a5fa")+"15":"transparent",color:formaPagFiltro===fp?(COR_FP[fp]||"#60a5fa"):"var(--mt)",cursor:"pointer",fontWeight:formaPagFiltro===fp?800:500}}>
+          style={{padding:"3px 10px",borderRadius:20,fontSize:11,border:"1.5px solid "+(formaPagFiltro===fp?(COR_FP[fp]||"#a78bfa"):"var(--cpb)"),background:formaPagFiltro===fp?(COR_FP[fp]||"#a78bfa")+"15":"transparent",color:formaPagFiltro===fp?(COR_FP[fp]||"#a78bfa"):"var(--mt)",cursor:"pointer",fontWeight:formaPagFiltro===fp?800:500}}>
           {fp?ICON_FP[fp]+" "+fp:"Todas formas"}
         </button>
       ))}
@@ -5788,7 +5414,7 @@ function CaixinhaPage({caixa,setCaixa,pacientes,profissionais,procedimentos,agen
           const cor=COR_FP[e.formaPagamento]||"#64748b";
           return(<div key={e.id} className="grid-row" style={{gridTemplateColumns:"90px 55px 1fr 130px 130px 100px 70px 40px",background:i%2?"var(--gr)":""}}>
             <div style={{fontSize:11,fontWeight:700}}>{brDate(e.data)}</div>
-            <div style={{fontSize:11,color:"#60a5fa",fontWeight:800}}>{e.hora}</div>
+            <div style={{fontSize:11,color:"#a78bfa",fontWeight:800}}>{e.hora}</div>
             <div style={{fontSize:11,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pac?.nome||"—"}</div>
             <div style={{fontSize:10,color:"var(--mt)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{prof?.nome||"—"}</div>
             <div style={{fontSize:10,color:"var(--mt)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{proc?.nome||"—"}</div>
@@ -5806,839 +5432,6 @@ function CaixinhaPage({caixa,setCaixa,pacientes,profissionais,procedimentos,agen
 }
 
 
-function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,salas,filiais,chamados,fila,pedidos,auth,showToast,atividades,setPacientes,setProfissionais,setAgenda}){
-  const [tab,setTab]=useState("overview");
-  const [periodo,setPeriodo]=useState("mes");
-  const [selProf,setSelProf]=useState("");
-
-  // ── Ranges ────────────────────────────────────────────────────────────
-  const getRange=()=>{
-    const d=new Date();
-    if(periodo==="hoje")return{ini:hoje_str,fim:hoje_str};
-    if(periodo==="semana"){const x=new Date(d);x.setDate(x.getDate()-6);return{ini:ymd(x),fim:hoje_str};}
-    if(periodo==="mes"){const x=new Date(d);x.setDate(1);return{ini:ymd(x),fim:hoje_str};}
-    if(periodo==="trimestre"){const x=new Date(d);x.setMonth(x.getMonth()-2);x.setDate(1);return{ini:ymd(x),fim:hoje_str};}
-    return{ini:hoje_str,fim:hoje_str};
-  };
-  const {ini,fim}=getRange();
-  const agP=agenda.filter(a=>a.data>=ini&&a.data<=fim);
-  const agHoje=agenda.filter(a=>a.data===hoje_str);
-
-  // ── KPIs principais ────────────────────────────────────────────────────
-  const total=agP.length;
-  const atend=agP.filter(a=>["atendido","faturado"].includes(a.status)).length;
-  const faltas=agP.filter(a=>["faltou","faltou_pacote"].includes(a.status)).length;
-  const canc=agP.filter(a=>["cancelado","desmarcou_pac","desmarcou_prof"].includes(a.status)).length;
-  const fat=agP.filter(a=>a.status==="faturado").length;
-  const receitaEst=agP.filter(a=>a.status==="faturado").reduce((s,a)=>{const p=procedimentos.find(x=>x.id===Number(a.procedimentoId));return s+(p?.valor||0);},0);
-  const naoFat=agP.filter(a=>a.status==="nao_faturado").length;
-  const receitaPerdas=agP.filter(a=>a.status==="nao_faturado").reduce((s,a)=>{const p=procedimentos.find(x=>x.id===Number(a.procedimentoId));return s+(p?.valor||0);},0);
-  const txPresenca=total>0?Math.round((atend/total)*100):0;
-  const txFalta=total>0?Math.round((faltas/total)*100):0;
-  const txCanc=total>0?Math.round((canc/total)*100):0;
-  const txFat=atend>0?Math.round((fat/atend)*100):0;
-
-  // ── Hoje ──────────────────────────────────────────────────────────────
-  const hojeTot=agHoje.length;
-  const hojePend=agHoje.filter(a=>["agendado","confirmado"].includes(a.status)).length;
-  const hojeAtend=agHoje.filter(a=>["atendido","faturado"].includes(a.status)).length;
-  const hojeFalta=agHoje.filter(a=>["faltou","faltou_pacote"].includes(a.status)).length;
-
-  // ── Evolução 14 dias ──────────────────────────────────────────────────
-  const dias14=Array.from({length:14},(_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);const ds=ymd(d);const ags=agenda.filter(a=>a.data===ds);return{ds,total:ags.length,atend:ags.filter(a=>["atendido","faturado"].includes(a.status)).length,falta:ags.filter(a=>["faltou","faltou_pacote"].includes(a.status)).length};});
-  const maxDia=Math.max(...dias14.map(d=>d.total),1);
-
-  // ── Profissionais stats ───────────────────────────────────────────────
-  const profStats=profissionais.filter(p=>["profissional","coordenador","coordenador_aba"].includes(p.role)).map(prof=>{
-    const aps=agP.filter(a=>Number(a.profissionalId)===Number(prof.id));
-    const at=aps.filter(a=>["atendido","faturado"].includes(a.status)).length;
-    const fa=aps.filter(a=>["faltou","faltou_pacote"].includes(a.status)).length;
-    const ft=aps.filter(a=>a.status==="faturado").length;
-    const rec=aps.filter(a=>a.status==="faturado").reduce((s,a)=>{const p=procedimentos.find(x=>x.id===Number(a.procedimentoId));return s+(p?.valor||0);},0);
-    const tx=aps.length>0?Math.round((at/aps.length)*100):0;
-    const perf=tx>=85?"A":tx>=70?"B":tx>=50?"C":"D";
-    return{...prof,tot:aps.length,at,fa,ft,rec,tx,perf};
-  }).sort((a,b)=>b.at-a.at);
-
-  // ── Salas ─────────────────────────────────────────────────────────────
-  const salaStats=salas.filter(s=>s.ativa!==false).map(sala=>{
-    const aps=agP.filter(a=>Number(a.salaId)===Number(sala.id));
-    const dias=Math.max(1,Math.round((new Date(fim)-new Date(ini))/(86400000)));
-    const diasUteis=Math.max(1,Math.round(dias*5/7));
-    const cap=diasUteis*8;
-    const pct=Math.min(100,Math.round((aps.length/cap)*100));
-    const filial=filiais.find(f=>f.id===sala.filialId);
-    const receita=aps.filter(a=>a.status==="faturado").reduce((s,a)=>{const p=procedimentos.find(x=>x.id===Number(a.procedimentoId));return s+(p?.valor||0);},0);
-    const custo=Number(sala.custoMensal||0);
-    const roi=custo>0?Math.round(((receita-custo)/custo)*100):null;
-    // Ocupação por hora (TURNOS_H)
-    const porHora=TURNOS_H.map(h=>{
-      const qtd=aps.filter(a=>toMin(a.horarioSessao)<=toMin(h)&&toMin(a.horarioFimSessao||a.horarioSessao)>toMin(h)).length;
-      const diasU=diasUteis;
-      const pctH=Math.min(100,Math.round((qtd/Math.max(1,diasU))*100));
-      return{hora:h,qtd,pct:pctH};
-    });
-    return{...sala,total:aps.length,pct,cap,filial:filial?.nome||"",receita,custo,roi,porHora};
-  }).sort((a,b)=>b.pct-a.pct);
-
-  // ── Convênios ─────────────────────────────────────────────────────────
-  const convStats=agP.reduce((acc,a)=>{
-    const cv=a.convenio||"Particular";
-    if(!acc[cv])acc[cv]={nome:cv,total:0,atend:0,fat:0,rec:0};
-    acc[cv].total++;
-    if(["atendido","faturado"].includes(a.status))acc[cv].atend++;
-    if(a.status==="faturado"){acc[cv].fat++;const p=procedimentos.find(x=>x.id===Number(a.procedimentoId));acc[cv].rec+=(p?.valor||0);}
-    return acc;
-  },{});
-  const convArr=Object.values(convStats).sort((a,b)=>b.total-a.total);
-  const maxConv=Math.max(...convArr.map(c=>c.total),1);
-
-  // ── Chamados ──────────────────────────────────────────────────────────
-  const chamAbertos=chamados.filter(c=>["aberto","andamento"].includes(c.status)).length;
-  const chamEnc=chamados.filter(c=>c.status==="encerrado").length;
-  const chamTotal=Math.max(chamados.length,1);
-  const txResol=Math.round((chamEnc/chamTotal)*100);
-  const chamPorSetor=chamados.reduce((acc,ch)=>{
-    const s=ch.setor||"Outros";
-    if(!acc[s])acc[s]={setor:s,total:0,abertos:0,enc:0};
-    acc[s].total++;
-    if(["aberto","andamento"].includes(ch.status))acc[s].abertos++;
-    if(ch.status==="encerrado")acc[s].enc++;
-    return acc;
-  },{});
-
-  // ── Fila espera ────────────────────────────────────────────────────────
-  const filaEsp=fila.reduce((acc,f)=>{
-    const e=f.especialidade||"Outros";
-    if(!acc[e])acc[e]={esp:e,total:0};
-    acc[e].total++;return acc;
-  },{});
-
-  // ── Pedidos vencendo ──────────────────────────────────────────────────
-  const pedVenc7=pedidos.filter(p=>p.dataValidade&&diffDays(hoje_str,p.dataValidade)>=0&&diffDays(hoje_str,p.dataValidade)<=7);
-  const pedVenc30=pedidos.filter(p=>p.dataValidade&&diffDays(hoje_str,p.dataValidade)>=0&&diffDays(hoje_str,p.dataValidade)<=30);
-  const pedVencidos=pedidos.filter(p=>p.dataValidade&&diffDays(hoje_str,p.dataValidade)<0);
-
-  // ── Indicadores de processo ───────────────────────────────────────────
-  const ocupMedia=salaStats.length>0?Math.round(salaStats.reduce((s,x)=>s+x.pct,0)/salaStats.length):0;
-  const custoSalasTotal=salas.reduce((s,sala)=>s+Number(sala.custoMensal||0),0);
-  const receitaSalasTotal=salaStats.reduce((s,x)=>s+(x.receita||0),0);
-  const roiSalas=custoSalasTotal>0?Math.round(((receitaSalasTotal-custoSalasTotal)/custoSalasTotal)*100):null;
-  const indicadores=[
-    {label:"Presença",val:txPresenca,meta:85,unit:"%",cor:"#34d399",rev:false,icon:"✅"},
-    {label:"Faturamento",val:txFat,meta:70,unit:"%",cor:"#22c55e",rev:false,icon:"💰"},
-    {label:"Resolução chamados",val:txResol,meta:80,unit:"%",cor:"#60a5fa",rev:false,icon:"📨"},
-    {label:"Taxa de falta",val:txFalta,meta:15,unit:"%",cor:"#f87171",rev:true,icon:"🚫"},
-    {label:"Cancelamentos",val:txCanc,meta:10,unit:"%",cor:"#f59e0b",rev:true,icon:"❌"},
-    {label:"Ocupação salas",val:ocupMedia,meta:60,unit:"%",cor:"#a78bfa",rev:false,icon:"🏢"},
-  ];
-
-  // ── Alertas ───────────────────────────────────────────────────────────
-  const alertas=[];
-  if(txFalta>20)alertas.push({n:"alto",msg:"Taxa de faltas crítica: "+txFalta+"%",area:"Agenda"});
-  if(chamAbertos>10)alertas.push({n:"alto",msg:chamAbertos+" chamados sem resolução",area:"Chamados"});
-  if(pedVenc7.length>0)alertas.push({n:"alto",msg:pedVenc7.length+" pedido(s) vencendo em 7 dias",area:"Pedidos"});
-  if(fila.length>15)alertas.push({n:"medio",msg:fila.length+" pacientes na fila de espera",area:"Fila"});
-  profStats.filter(p=>p.tx<60&&p.tot>3).forEach(p=>alertas.push({n:"medio",msg:"Presença baixa: "+profShort(p.nome)+" ("+p.tx+"%)",area:"Profissional"}));
-  if(alertas.length===0)alertas.push({n:"ok",msg:"Todos os indicadores dentro do esperado",area:"Geral"});
-
-  const TB=({id,icon,label})=>(
-    <button className="btn tab-btn" onClick={()=>setTab(id)}
-      style={{background:tab===id?"var(--na)":"transparent",color:tab===id?"#3b82f6":"var(--mt)",fontWeight:tab===id?800:500}}>
-      {icon} {label}
-    </button>
-  );
-
-  const PillPeriodo=({v,l})=>(
-    <button onClick={()=>setPeriodo(v)} style={{padding:"4px 12px",borderRadius:20,fontSize:11,fontWeight:800,border:"1.5px solid "+(periodo===v?"#3b82f6":"var(--cpb)"),background:periodo===v?"#3b82f615":"transparent",color:periodo===v?"#3b82f6":"var(--mt)",cursor:"pointer"}}>{l}</button>
-  );
-
-  return(<div className="page-wrap">
-    {/* ── Header ── */}
-    <div className="page-head">
-      <h1>📊 Gestão — Processos & Indicadores</h1>
-      <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-        <PillPeriodo v="hoje" l="Hoje"/>
-        <PillPeriodo v="semana" l="7 dias"/>
-        <PillPeriodo v="mes" l="Mês"/>
-        <PillPeriodo v="trimestre" l="Trimestre"/>
-      </div>
-    </div>
-
-    {/* ── Alertas operacionais ── */}
-    <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:16}}>
-      {alertas.map((a,i)=>(
-        <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 13px",borderRadius:20,fontSize:11,fontWeight:700,
-          background:a.n==="alto"?"#450a0a25":a.n==="medio"?"#451a0325":"#052e1c25",
-          border:"1px solid "+(a.n==="alto"?"#f8717150":a.n==="medio"?"#f59e0b50":"#34d39950"),
-          color:a.n==="alto"?"#f87171":a.n==="medio"?"#f59e0b":"#34d399"}}>
-          {a.n==="alto"?"🚨":a.n==="medio"?"⚠️":"✅"}
-          <span style={{fontWeight:900}}>{a.area}:</span> {a.msg}
-        </div>
-      ))}
-    </div>
-
-    {/* ── Snapshot de hoje ── */}
-    <div style={{background:"var(--card)",border:"1px solid var(--cb)",borderRadius:14,padding:"14px 18px",marginBottom:16,display:"flex",gap:20,alignItems:"center",flexWrap:"wrap"}}>
-      <div style={{fontWeight:900,fontSize:12,color:"var(--mt)",letterSpacing:".5px",textTransform:"uppercase",minWidth:60}}>Hoje</div>
-      {[{l:"Total",v:hojeTot,c:"#60a5fa"},{l:"Atendidos",v:hojeAtend,c:"#34d399"},{l:"Pendentes",v:hojePend,c:"#f59e0b"},{l:"Faltas",v:hojeFalta,c:"#f87171"}].map(s=>(
-        <div key={s.l} style={{textAlign:"center",padding:"0 10px",borderLeft:"1px solid var(--sc)"}}>
-          <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:24,color:s.c,lineHeight:1}}>{s.v}</div>
-          <div style={{fontSize:10,color:"var(--mt)",fontWeight:700,marginTop:2}}>{s.l}</div>
-        </div>
-      ))}
-      <div style={{marginLeft:"auto",fontSize:11,color:"var(--mt)"}}>
-        Receita est. período: <span style={{fontWeight:900,color:"#34d399",fontSize:14}}>{brl(receitaEst)}</span>
-      </div>
-    </div>
-
-    {/* ── KPIs do período ── */}
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(145px,1fr))",gap:10,marginBottom:18}}>
-      {[
-        {icon:"📅",label:"Sessões",val:total,color:"#60a5fa",sub:"agendadas"},
-        {icon:"✅",label:"Atendidos",val:atend,color:"#34d399",sub:txPresenca+"% presença"},
-        {icon:"🚫",label:"Faltas",val:faltas,color:txFalta>15?"#f87171":"#f59e0b",sub:txFalta+"% do total",alert:txFalta>20},
-        {icon:"❌",label:"Cancelados",val:canc,color:"#64748b",sub:txCanc+"% do total"},
-        {icon:"💰",label:"Faturados",val:fat,color:"#22c55e",sub:txFat+"% dos atend."},
-        {icon:"💵",label:"Receita Est.",val:brl(receitaEst),color:"#34d399",sub:"período",small:true},
-        {icon:"📉",label:"Perdas",val:naoFat>0?brl(receitaPerdas):"—",color:naoFat>0?"#ef4444":"#64748b",sub:naoFat+" sessão(ões)",alert:naoFat>3,small:true},
-        {icon:"📨",label:"Chamados",val:chamAbertos,color:chamAbertos>5?"#f87171":"#fb923c",sub:"em aberto",alert:chamAbertos>10},
-        {icon:"⏳",label:"Fila Espera",val:fila.length,color:"#a78bfa",sub:"pacientes"},
-      ].map(k=>(
-        <div key={k.label} style={{background:"var(--card)",border:"1px solid var(--cb)",borderTop:"3px solid "+k.color,borderRadius:14,padding:"14px 16px",position:"relative",overflow:"hidden"}}>
-          {k.alert&&<div style={{position:"absolute",top:6,right:8,fontSize:9,fontWeight:900,color:"#f87171",background:"#f8717120",padding:"1px 6px",borderRadius:20}}>ALERTA</div>}
-          <div style={{fontSize:18,marginBottom:6}}>{k.icon}</div>
-          <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:k.small?18:26,color:k.color,lineHeight:1,letterSpacing:"-1px"}}>{k.val}</div>
-          <div style={{fontSize:10,fontWeight:800,letterSpacing:".6px",color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>{k.label}</div>
-          <div style={{fontSize:10,color:"var(--mt)",marginTop:2,fontStyle:"italic"}}>{k.sub}</div>
-        </div>
-      ))}
-    </div>
-
-    {/* ── Tabs ── */}
-    <div className="tab-bar">
-      <TB id="overview"      icon="📈" label="Visão Geral"/>
-      <TB id="produtividade" icon="🩺" label="Produtividade"/>
-      <TB id="processos"     icon="⚙️" label="Processos"/>
-      <TB id="indicadores"   icon="🎯" label="Indicadores"/>
-      <TB id="ocupacao"      icon="🏢" label="Salas & Filiais"/>
-      <TB id="convenios"     icon="🏥" label="Convênios"/>
-      <TB id="dashboard"    icon="📈" label="Dashboard"/>
-      <TB id="relatorios"   icon="📊" label="Relatórios"/>
-      <TB id="atividades"   icon="📋" label="Atividades"/>
-      <TB id="importar"     icon="📥" label="Importar"/>
-      <TB id="exportar"     icon="📤" label="Exportar"/>
-    </div>
-
-    {/* ══ VISÃO GERAL ══ */}
-    {tab==="overview"&&<div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:14}}>
-
-      {/* Gráfico evolução 14 dias */}
-      <div className="card" style={{padding:18}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span>📈 Evolução diária — 14 dias</span>
-          <div style={{display:"flex",gap:10,fontSize:10,color:"var(--mt)"}}>
-            <span style={{display:"flex",alignItems:"center",gap:3}}><span style={{width:9,height:9,background:"#34d399",borderRadius:2,display:"inline-block"}}/> Atend.</span>
-            <span style={{display:"flex",alignItems:"center",gap:3}}><span style={{width:9,height:9,background:"#f87171",borderRadius:2,display:"inline-block"}}/> Faltas</span>
-          </div>
-        </div>
-        <div style={{display:"flex",alignItems:"flex-end",gap:2,height:100,marginBottom:4}}>
-          {dias14.map((d,i)=>{
-            const hA=maxDia>0?Math.max(2,Math.round((d.atend/maxDia)*88)):2;
-            const hF=maxDia>0?Math.max(2,Math.round((d.falta/maxDia)*88)):2;
-            const isT=d.ds===hoje_str;
-            return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:1}}>
-              {d.total>0&&<div style={{fontSize:8,color:"var(--mt)",fontWeight:700,marginBottom:1}}>{d.total}</div>}
-              <div style={{display:"flex",gap:1,alignItems:"flex-end",height:88}}>
-                <div style={{width:7,background:isT?"#60a5fa":"#34d399",borderRadius:"2px 2px 0 0",height:hA+"px",opacity:isT?1:.8}} title={"Atend: "+d.atend}/>
-                <div style={{width:7,background:"#f87171",borderRadius:"2px 2px 0 0",height:hF+"px",opacity:.8}} title={"Faltas: "+d.falta}/>
-              </div>
-              {i%3===0&&<div style={{fontSize:7,color:"var(--mt)",fontWeight:700,marginTop:2}}>{d.ds.slice(8)+"/"+d.ds.slice(5,7)}</div>}
-            </div>);
-          })}
-        </div>
-      </div>
-
-      {/* Status doughnut */}
-      <div className="card" style={{padding:18}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:12}}>🔵 Distribuição de Status</div>
-        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:14}}>
-          <DonutChart size={90} data={Object.entries(STATUS_AG).filter(([k])=>agP.filter(a=>a.status===k).length>0).map(([k,v])=>({v:agP.filter(a=>a.status===k).length,c:v.color}))}/>
-          <div style={{flex:1}}>
-            {Object.entries(STATUS_AG).filter(([k])=>agP.filter(a=>a.status===k).length>0).map(([k,v])=>{
-              const cnt=agP.filter(a=>a.status===k).length;
-              const pct=total>0?Math.round((cnt/total)*100):0;
-              return(<div key={k} style={{display:"flex",alignItems:"center",gap:5,marginBottom:4}}>
-                <span style={{width:7,height:7,borderRadius:"50%",background:v.color,flexShrink:0,display:"inline-block"}}/>
-                <span style={{fontSize:10,color:"var(--mt)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.label}</span>
-                <span style={{fontSize:11,fontWeight:900,color:v.color,minWidth:20,textAlign:"right"}}>{cnt}</span>
-                <span style={{fontSize:9,color:"var(--mt)",width:26,textAlign:"right"}}>{pct}%</span>
-              </div>);
-            })}
-          </div>
-        </div>
-        <div style={{background:"var(--sx)",borderRadius:9,padding:"8px 12px"}}>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4}}>
-            <span style={{fontWeight:700}}>Taxa de Presença</span>
-            <span style={{fontWeight:900,color:txPresenca>=80?"#34d399":txPresenca>=60?"#f59e0b":"#f87171",fontSize:13}}>{txPresenca}%</span>
-          </div>
-          <div style={{height:6,borderRadius:3,background:"var(--cb)",overflow:"hidden"}}>
-            <div style={{width:txPresenca+"%",height:"100%",background:txPresenca>=80?"#34d399":txPresenca>=60?"#f59e0b":"#f87171",borderRadius:3,transition:"width .5s"}}/>
-          </div>
-        </div>
-      </div>
-
-      {/* Fila espera */}
-      <div className="card" style={{padding:18}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:12,display:"flex",justifyContent:"space-between"}}>
-          <span>⏳ Fila de Espera</span>
-          <span style={{fontSize:11,color:"#a78bfa",fontWeight:800}}>{fila.length} pacientes</span>
-        </div>
-        {fila.length===0&&<div className="muted" style={{fontSize:12}}>Fila vazia.</div>}
-        {Object.values(filaEsp).sort((a,b)=>b.total-a.total).map(f=>{
-          const pct=Math.round((f.total/(fila.length||1))*100);
-          const cor=espCor(f.esp);
-          return(<div key={f.esp} style={{marginBottom:9}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:3}}>
-              <span style={{color:"var(--mt)",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:160}}>{f.esp}</span>
-              <span style={{fontWeight:900,color:cor,flexShrink:0}}>{f.total}</span>
-            </div>
-            <div style={{height:5,borderRadius:3,background:"var(--sx)",overflow:"hidden"}}>
-              <div style={{width:pct+"%",height:"100%",background:cor,borderRadius:3}}/>
-            </div>
-          </div>);
-        })}
-      </div>
-
-      {/* Chamados por setor */}
-      <div className="card" style={{padding:18}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:12,display:"flex",justifyContent:"space-between"}}>
-          <span>📨 Chamados por Setor</span>
-          <span style={{fontSize:11,color:chamAbertos>0?"#f87171":"#34d399",fontWeight:800}}>{chamAbertos} abertos</span>
-        </div>
-        {Object.values(chamPorSetor).sort((a,b)=>b.abertos-a.abertos).map(s=>{
-          const pctEnc=s.total>0?Math.round((s.enc/s.total)*100):0;
-          return(<div key={s.setor} style={{marginBottom:10}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:3}}>
-              <span style={{fontWeight:700}}>{s.setor}</span>
-              <div style={{display:"flex",gap:8}}>
-                <span style={{color:"#f87171",fontWeight:800}}>{s.abertos} ab.</span>
-                <span style={{color:"#34d399",fontWeight:800}}>{s.enc} enc.</span>
-              </div>
-            </div>
-            <div style={{height:5,borderRadius:3,background:"var(--sx)",overflow:"hidden"}}>
-              <div style={{width:pctEnc+"%",height:"100%",background:"#34d399",borderRadius:3}}/>
-            </div>
-          </div>);
-        })}
-        {Object.keys(chamPorSetor).length===0&&<div className="muted" style={{fontSize:12}}>Nenhum chamado.</div>}
-      </div>
-    </div>}
-
-    {/* ══ PRODUTIVIDADE ══ */}
-    {tab==="produtividade"&&<div>
-      <div className="card" style={{overflow:"hidden"}}>
-        <div className="grid-header" style={{gridTemplateColumns:"2fr 60px 60px 60px 60px 80px 90px 70px"}}>
-          <div>Profissional</div>
-          <div style={{textAlign:"center"}}>Total</div>
-          <div style={{textAlign:"center"}}>Atend.</div>
-          <div style={{textAlign:"center"}}>Faltas</div>
-          <div style={{textAlign:"center"}}>Fat.</div>
-          <div style={{textAlign:"center"}}>Presença</div>
-          <div style={{textAlign:"right"}}>Receita</div>
-          <div style={{textAlign:"center"}}>Nota</div>
-        </div>
-        {profStats.length===0&&<div style={{padding:16}} className="muted">Nenhum dado no período.</div>}
-        {profStats.map((prof,i)=>{
-          const cor=espCor((prof.especialidades||[""])[0]);
-          const notaCor={"A":"#34d399","B":"#60a5fa","C":"#f59e0b","D":"#f87171"}[prof.perf]||"#64748b";
-          return(<div key={prof.id} className="grid-row" style={{gridTemplateColumns:"2fr 60px 60px 60px 60px 80px 90px 70px",background:i%2?"var(--gr)":""}}>
-            <div>
-              <div style={{fontWeight:800,fontSize:12,color:cor}}>{prof.nome}</div>
-              <div style={{fontSize:10,color:"var(--mt)"}}>{(prof.especialidades||[""])[0]}</div>
-            </div>
-            <div style={{textAlign:"center",fontWeight:800,fontSize:13}}>{prof.tot}</div>
-            <div style={{textAlign:"center",fontWeight:800,fontSize:13,color:"#34d399"}}>{prof.at}</div>
-            <div style={{textAlign:"center",fontWeight:800,fontSize:13,color:prof.fa>3?"#f87171":"var(--mt)"}}>{prof.fa}</div>
-            <div style={{textAlign:"center",fontWeight:800,fontSize:13,color:"#22c55e"}}>{prof.ft}</div>
-            <div style={{textAlign:"center"}}>
-              <div style={{fontWeight:900,fontSize:13,color:prof.tx>=80?"#34d399":prof.tx>=60?"#f59e0b":"#f87171"}}>{prof.tx}%</div>
-              <div style={{height:3,borderRadius:2,background:"var(--sx)",marginTop:2,overflow:"hidden"}}>
-                <div style={{width:prof.tx+"%",height:"100%",background:prof.tx>=80?"#34d399":prof.tx>=60?"#f59e0b":"#f87171"}}/>
-              </div>
-            </div>
-            <div style={{textAlign:"right",fontWeight:800,fontSize:12,color:"#34d399"}}>{brl(prof.rec)}</div>
-            <div style={{textAlign:"center"}}>
-              <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:"50%",fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:14,background:notaCor+"20",color:notaCor,border:"2px solid "+notaCor}}>{prof.perf}</span>
-            </div>
-          </div>);
-        })}
-      </div>
-      {/* Legenda nota */}
-      <div style={{marginTop:10,display:"flex",gap:12,fontSize:11,color:"var(--mt)"}}>
-        {[["A","≥85% presença","#34d399"],["B","70–84%","#60a5fa"],["C","50–69%","#f59e0b"],["D","<50%","#f87171"]].map(([n,d,c])=>(
-          <span key={n} style={{display:"flex",alignItems:"center",gap:5}}>
-            <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:18,height:18,borderRadius:"50%",fontWeight:900,fontSize:10,background:c+"20",color:c,border:"1.5px solid "+c}}>{n}</span> {d}
-          </span>
-        ))}
-      </div>
-    </div>}
-
-    {/* ══ PROCESSOS ══ */}
-    {tab==="processos"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-      {/* Chamados detalhado */}
-      <div className="card" style={{padding:18}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:14}}>📨 Chamados — Detalhamento</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
-          {[{l:"Total",v:chamados.length,c:"#60a5fa"},{l:"Abertos",v:chamados.filter(c=>c.status==="aberto").length,c:"#f59e0b"},{l:"Andamento",v:chamados.filter(c=>c.status==="andamento").length,c:"#818cf8"},{l:"Encerrados",v:chamEnc,c:"#34d399"}].map(k=>(
-            <div key={k.l} style={{background:"var(--sx)",borderRadius:9,padding:"10px 12px"}}>
-              <div style={{fontSize:10,color:"var(--mt)",fontWeight:800,marginBottom:2}}>{k.l}</div>
-              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:22,color:k.c}}>{k.v}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{fontWeight:800,fontSize:11,marginBottom:8,color:"var(--lb)",letterSpacing:".5px"}}>POR SETOR</div>
-        {Object.values(chamPorSetor).sort((a,b)=>b.total-a.total).map(s=>(
-          <div key={s.setor} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--sx)"}}>
-            <span style={{fontSize:12,fontWeight:700}}>{s.setor}</span>
-            <div style={{display:"flex",gap:10}}>
-              <span style={{fontSize:11,color:"#f87171",fontWeight:800}}>{s.abertos} ab.</span>
-              <span style={{fontSize:11,color:"#34d399",fontWeight:800}}>{s.enc} enc.</span>
-              <span style={{fontSize:10,color:"var(--mt)"}}>{s.total} tot.</span>
-            </div>
-          </div>
-        ))}
-        {Object.keys(chamPorSetor).length===0&&<div className="muted" style={{fontSize:12}}>Nenhum chamado.</div>}
-      </div>
-
-      {/* Pedidos médicos */}
-      <div className="card" style={{padding:18}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:14}}>🩻 Pedidos Médicos</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
-          {[{l:"Total",v:pedidos.length,c:"#60a5fa"},{l:"Venc. 30d",v:pedVenc30.length,c:"#f59e0b"},{l:"Urgente 7d",v:pedVenc7.length,c:"#f87171"},{l:"Vencidos",v:pedVencidos.length,c:"#64748b"}].map(k=>(
-            <div key={k.l} style={{background:"var(--sx)",borderRadius:9,padding:"10px 12px"}}>
-              <div style={{fontSize:10,color:"var(--mt)",fontWeight:800,marginBottom:2}}>{k.l}</div>
-              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:22,color:k.c}}>{k.v}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{fontWeight:800,fontSize:11,marginBottom:8,color:"var(--lb)",letterSpacing:".5px"}}>VENCENDO EM 7 DIAS</div>
-        {pedVenc7.length===0&&<div style={{fontSize:12,color:"#34d399"}}>✅ Nenhum vencendo esta semana</div>}
-        {pedVenc7.map(p=>{
-          const pac=pacientes.find(x=>x.id===Number(p.pacienteId));
-          const dias=diffDays(hoje_str,p.dataValidade);
-          return(<div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid var(--sx)",fontSize:12}}>
-            <div>
-              <div style={{fontWeight:700}}>{pac?.nome?.split(" ")[0]||"—"} {pac?.nome?.split(" ").slice(-1)[0]||""}</div>
-              <div style={{fontSize:10,color:"var(--mt)"}}>{p.especialidade||p.tipo}</div>
-            </div>
-            <span style={{fontWeight:900,color:dias<=3?"#f87171":"#f59e0b",fontSize:14}}>{dias}d</span>
-          </div>);
-        })}
-      </div>
-
-      {/* Distribuição de especialidades */}
-      <div className="card" style={{padding:18,gridColumn:"1/-1"}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:14}}>🩺 Sessões por Especialidade — período</div>
-        {(()=>{
-          const espStats=agP.reduce((acc,a)=>{
-            const prof=profissionais.find(p=>p.id===Number(a.profissionalId));
-            const esp=(prof?.especialidades||[prof?.especialidade||"Outro"])[0]||"Outro";
-            if(!acc[esp])acc[esp]={esp,total:0,atend:0};
-            acc[esp].total++;
-            if(["atendido","faturado"].includes(a.status))acc[esp].atend++;
-            return acc;
-          },{});
-          const arr=Object.values(espStats).sort((a,b)=>b.total-a.total);
-          const mx=Math.max(...arr.map(e=>e.total),1);
-          return(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
-            {arr.map(e=>{
-              const cor=espCor(e.esp);
-              const pct=Math.round((e.total/mx)*100);
-              const txP=e.total>0?Math.round((e.atend/e.total)*100):0;
-              return(<div key={e.esp} style={{background:"var(--sx)",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid "+cor}}>
-                <div style={{fontSize:11,fontWeight:800,color:cor,marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.esp}</div>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:5}}>
-                  <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:22,color:"var(--tx)"}}>{e.total}</span>
-                  <span style={{fontSize:11,fontWeight:800,color:txP>=80?"#34d399":txP>=60?"#f59e0b":"#f87171"}}>{txP}% pres.</span>
-                </div>
-                <div style={{height:4,borderRadius:2,background:"var(--cb)",overflow:"hidden"}}>
-                  <div style={{width:pct+"%",height:"100%",background:cor,borderRadius:2}}/>
-                </div>
-              </div>);
-            })}
-          </div>);
-        })()}
-      </div>
-    </div>}
-
-    {/* ══ INDICADORES ══ */}
-    {tab==="indicadores"&&<div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12,marginBottom:18}}>
-        {indicadores.map(ind=>{
-          const ok=ind.rev?(ind.val<=ind.meta):(ind.val>=ind.meta);
-          const pctBar=ind.rev?Math.min(100,Math.round((ind.meta/Math.max(ind.val,1))*100)):Math.min(100,ind.val);
-          return(<div key={ind.label} style={{background:"var(--card)",border:"1.5px solid "+(ok?ind.cor+"40":"#f8717140"),borderRadius:13,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
-            <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:ok?ind.cor:"#f87171",borderRadius:"13px 13px 0 0"}}/>
-            <div style={{fontSize:20,marginBottom:8}}>{ind.icon}</div>
-            <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",letterSpacing:".5px",textTransform:"uppercase",marginBottom:6}}>{ind.label}</div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:8}}>
-              <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:30,color:ok?ind.cor:"#f87171",lineHeight:1,letterSpacing:"-1.5px"}}>{ind.val}{ind.unit}</span>
-              <div style={{textAlign:"right"}}>
-                <div style={{fontSize:10,color:"var(--mt)"}}>Meta</div>
-                <div style={{fontSize:14,fontWeight:900,color:"var(--mt)"}}>{ind.meta}{ind.unit}</div>
-              </div>
-            </div>
-            <div style={{height:6,borderRadius:3,background:"var(--sx)",overflow:"hidden",marginBottom:8}}>
-              <div style={{width:pctBar+"%",height:"100%",background:ok?ind.cor:"#f87171",borderRadius:3,transition:"width .5s"}}/>
-            </div>
-            <div style={{fontSize:11,fontWeight:800,color:ok?"#34d399":"#f87171",display:"flex",alignItems:"center",gap:5}}>
-              {ok?"✅ Meta atingida":"⚠️ Abaixo da meta"}
-              <span style={{marginLeft:"auto",fontSize:10,color:"var(--mt)"}}>Dif: {ind.rev?ind.val-ind.meta:ind.val-ind.meta > 0?"+":""}{ ind.val-ind.meta}{ind.unit}</span>
-            </div>
-          </div>);
-        })}
-      </div>
-
-      {/* Histórico mensal simplificado */}
-      <div className="card" style={{padding:18}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:14}}>📅 Distribuição semanal — últimas 4 semanas</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-          {Array.from({length:4},(_,w)=>{
-            const fim4=new Date();fim4.setDate(fim4.getDate()-(3-w)*7);
-            const ini4=new Date(fim4);ini4.setDate(fim4.getDate()-6);
-            const inS=ymd(ini4),fiS=ymd(fim4);
-            const ags=agenda.filter(a=>a.data>=inS&&a.data<=fiS);
-            const at=ags.filter(a=>["atendido","faturado"].includes(a.status)).length;
-            const fa=ags.filter(a=>["faltou","faltou_pacote"].includes(a.status)).length;
-            const tx=ags.length>0?Math.round((at/ags.length)*100):0;
-            const label=w===3?"Esta sem.":"Sem. -"+(3-w);
-            return(<div key={w} style={{background:"var(--sx)",borderRadius:10,padding:"14px",textAlign:"center"}}>
-              <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",marginBottom:8}}>{label}</div>
-              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:22,color:tx>=80?"#34d399":tx>=60?"#f59e0b":"#f87171"}}>{tx}%</div>
-              <div style={{fontSize:10,color:"var(--mt)",marginTop:2}}>presença</div>
-              <div style={{marginTop:8,display:"flex",justifyContent:"space-around",fontSize:10}}>
-                <span style={{color:"var(--tx)",fontWeight:700}}>{ags.length} sess.</span>
-                <span style={{color:"#f87171",fontWeight:700}}>{fa} falta</span>
-              </div>
-            </div>);
-          })}
-        </div>
-      </div>
-    </div>}
-
-    {/* ══ OCUPAÇÃO SALAS ══ */}
-    {tab==="ocupacao"&&<div>
-      {/* ── KPIs financeiros de salas ── */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))",gap:8,marginBottom:14}}>
-        <div className="card" style={{padding:"12px 14px",borderTop:"3px solid #a78bfa"}}>
-          <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:"#a78bfa"}}>{ocupMedia}%</div>
-          <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>Ocupação média</div>
-          <div style={{fontSize:10,color:"var(--mt)"}}>{salaStats.length} sala(s) ativas</div>
-        </div>
-        <div className="card" style={{padding:"12px 14px",borderTop:"3px solid #ef4444"}}>
-          <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:"#f87171"}}>{brl(custoSalasTotal)}</div>
-          <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>Custo mensal salas</div>
-          <div style={{fontSize:10,color:"var(--mt)"}}>soma de todas as salas</div>
-        </div>
-        <div className="card" style={{padding:"12px 14px",borderTop:"3px solid #34d399"}}>
-          <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:"#34d399"}}>{brl(receitaSalasTotal)}</div>
-          <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>Receita nas salas</div>
-          <div style={{fontSize:10,color:"var(--mt)"}}>sessões faturadas no período</div>
-        </div>
-        {roiSalas!==null&&<div className="card" style={{padding:"12px 14px",borderTop:"3px solid "+(roiSalas>=0?"#22c55e":"#ef4444")}}>
-          <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:roiSalas>=0?"#34d399":"#f87171"}}>{roiSalas>=0?"+":""}{roiSalas}%</div>
-          <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>ROI salas</div>
-          <div style={{fontSize:10,color:"var(--mt)"}}>(receita − custo) / custo</div>
-        </div>}
-      </div>
-
-      {/* ── Cards por sala ── */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:12,marginBottom:16}}>
-        {salaStats.map(sala=>{
-          const cor=sala.pct>=80?"#f87171":sala.pct>=50?"#f59e0b":"#34d399";
-          const corBarra=sala.cor||cor;
-          // pico de horário
-          const pico=sala.porHora?.reduce((a,b)=>b.qtd>a.qtd?b:a,{hora:"—",qtd:0,pct:0});
-          return(<div key={sala.id} className="card" style={{padding:16,borderTop:"4px solid "+corBarra}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-              <div>
-                <div style={{fontWeight:800,fontSize:13}}>{sala.nome}</div>
-                <div style={{fontSize:10,color:"var(--mt)"}}>{sala.filial}</div>
-                {sala.especialidade&&<div style={{fontSize:10,color:espCor(sala.especialidade),fontWeight:700,marginTop:1}}>{sala.especialidade}</div>}
-              </div>
-              <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:26,color:corBarra,lineHeight:1}}>{sala.pct}%</span>
-            </div>
-            {/* Barra principal */}
-            <div style={{height:7,borderRadius:4,background:"var(--sx)",overflow:"hidden",marginBottom:8}}>
-              <div style={{width:sala.pct+"%",height:"100%",background:corBarra,borderRadius:4,transition:"width .5s"}}/>
-            </div>
-            {/* Info grid */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:8,fontSize:11}}>
-              <div><span style={{color:"var(--mt)"}}>Sessões: </span><b>{sala.total}</b></div>
-              <div><span style={{color:"var(--mt)"}}>Cap.: </span><b>{sala.cap}</b></div>
-              {sala.custo>0&&<div><span style={{color:"var(--mt)"}}>Custo: </span><b style={{color:"#f87171"}}>{brl(sala.custo)}</b></div>}
-              {sala.custo>0&&<div><span style={{color:"var(--mt)"}}>Receita: </span><b style={{color:"#34d399"}}>{brl(sala.receita)}</b></div>}
-              {sala.roi!==null&&<div style={{gridColumn:"1/3"}}><span style={{color:"var(--mt)"}}>ROI: </span><b style={{color:sala.roi>=0?"#34d399":"#f87171"}}>{sala.roi>=0?"+":""}{sala.roi}%</b></div>}
-              {pico?.qtd>0&&<div style={{gridColumn:"1/3"}}><span style={{color:"var(--mt)"}}>🔥 Pico: </span><b>{pico.hora}</b><span style={{color:"var(--mt)"}}> ({pico.qtd} ag./dia em média)</span></div>}
-            </div>
-            {/* Mini heat-map de horários */}
-            <div style={{marginTop:6}}>
-              <div style={{fontSize:9,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginBottom:4}}>Ocupação por horário</div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:2}}>
-                {(sala.porHora||[]).filter((_,i)=>i%2===0).map(h=>{
-                  const bg=h.qtd===0?"var(--sx)":h.pct>=80?"#ef4444":h.pct>=50?"#f59e0b":h.pct>=20?"#34d399":"#14b8a620";
-                  return(<div key={h.hora} title={h.hora+": "+h.qtd+" ag. ("+h.pct+"%)"} style={{width:18,height:18,borderRadius:3,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:800,color:h.qtd>0?"#fff":"var(--lb)",cursor:"default"}}>
-                    {h.hora.slice(0,2)}
-                  </div>);
-                })}
-              </div>
-              <div style={{display:"flex",gap:8,marginTop:5,fontSize:9,color:"var(--mt)"}}>
-                <span style={{display:"flex",alignItems:"center",gap:2}}><span style={{width:8,height:8,borderRadius:2,background:"#14b8a620",display:"inline-block"}}/>Livre</span>
-                <span style={{display:"flex",alignItems:"center",gap:2}}><span style={{width:8,height:8,borderRadius:2,background:"#34d399",display:"inline-block"}}/>Baixo</span>
-                <span style={{display:"flex",alignItems:"center",gap:2}}><span style={{width:8,height:8,borderRadius:2,background:"#f59e0b",display:"inline-block"}}/>Médio</span>
-                <span style={{display:"flex",alignItems:"center",gap:2}}><span style={{width:8,height:8,borderRadius:2,background:"#ef4444",display:"inline-block"}}/>Alto</span>
-              </div>
-            </div>
-            <div style={{fontSize:10,padding:"4px 8px",borderRadius:6,background:cor+"15",color:cor,fontWeight:800,textAlign:"center",marginTop:8}}>
-              {sala.pct>=80?"🔴 Alta ocupação":sala.pct>=50?"🟡 Ocupação moderada":"🟢 Disponível"}
-            </div>
-          </div>);
-        })}
-        {salaStats.length===0&&<div className="muted" style={{fontSize:12,padding:16}}>Nenhuma sala cadastrada.</div>}
-      </div>
-
-      {/* ── Por filial ── */}
-      {filiais.length>0&&<div className="card" style={{padding:18}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:12}}>🏢 Ocupação por Filial</div>
-        {filiais.map(fil=>{
-          const ss=salaStats.filter(s=>s.filialId===fil.id);
-          if(ss.length===0)return null;
-          const med=Math.round(ss.reduce((s,x)=>s+x.pct,0)/ss.length);
-          const custoFil=ss.reduce((s,x)=>s+(x.custo||0),0);
-          const recFil=ss.reduce((s,x)=>s+(x.receita||0),0);
-          const cor=med>=80?"#f87171":med>=50?"#f59e0b":"#34d399";
-          return(<div key={fil.id} style={{marginBottom:14,paddingBottom:14,borderBottom:"1px solid var(--sc)"}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:5,flexWrap:"wrap",gap:4}}>
-              <span style={{fontWeight:800}}>{fil.nome}</span>
-              <div style={{display:"flex",gap:12,fontSize:11}}>
-                {custoFil>0&&<span style={{color:"#f87171"}}>Custo: <b>{brl(custoFil)}</b></span>}
-                {recFil>0&&<span style={{color:"#34d399"}}>Receita: <b>{brl(recFil)}</b></span>}
-                <span style={{fontWeight:900,color:cor}}>{med}% · {ss.length} salas</span>
-              </div>
-            </div>
-            <div style={{height:7,borderRadius:4,background:"var(--sx)",overflow:"hidden"}}>
-              <div style={{width:med+"%",height:"100%",background:cor,borderRadius:4,transition:"width .5s"}}/>
-            </div>
-          </div>);
-        })}
-      </div>}
-    </div>}
-
-    {/* ══ CONVÊNIOS ══ */}
-    {tab==="convenios"&&<div>
-      <div className="card" style={{overflow:"hidden",marginBottom:14}}>
-        <div className="grid-header" style={{gridTemplateColumns:"1.6fr 70px 70px 80px 70px 100px"}}>
-          <div>Convênio</div>
-          <div style={{textAlign:"center"}}>Sessões</div>
-          <div style={{textAlign:"center"}}>Atend.</div>
-          <div style={{textAlign:"center"}}>Presença</div>
-          <div style={{textAlign:"center"}}>Fat.</div>
-          <div style={{textAlign:"right"}}>Receita Est.</div>
-        </div>
-        {convArr.length===0&&<div style={{padding:16}} className="muted">Nenhum dado no período.</div>}
-        {convArr.map((cv,i)=>{
-          const tx=cv.total>0?Math.round((cv.atend/cv.total)*100):0;
-          return(<div key={cv.nome} className="grid-row" style={{gridTemplateColumns:"1.6fr 70px 70px 80px 70px 100px",background:i%2?"var(--gr)":""}}>
-            <div>
-              <div style={{fontWeight:800,fontSize:12}}>{cv.nome}</div>
-              <div style={{height:3,borderRadius:2,background:"var(--sx)",marginTop:4,overflow:"hidden",maxWidth:100}}>
-                <div style={{width:Math.round((cv.total/maxConv)*100)+"%",height:"100%",background:"#60a5fa"}}/>
-              </div>
-            </div>
-            <div style={{textAlign:"center",fontWeight:800}}>{cv.total}</div>
-            <div style={{textAlign:"center",fontWeight:800,color:"#34d399"}}>{cv.atend}</div>
-            <div style={{textAlign:"center"}}>
-              <span style={{fontWeight:900,color:tx>=80?"#34d399":tx>=60?"#f59e0b":"#f87171"}}>{tx}%</span>
-            </div>
-            <div style={{textAlign:"center",fontWeight:800,color:"#22c55e"}}>{cv.fat}</div>
-            <div style={{textAlign:"right",fontWeight:800,color:"#34d399",fontSize:12}}>{brl(cv.rec)}</div>
-          </div>);
-        })}
-      </div>
-      {/* Barras comparativas */}
-      <div className="card" style={{padding:18}}>
-        <div style={{fontWeight:900,fontSize:13,marginBottom:14}}>📊 Volume por Convênio</div>
-        {convArr.map(cv=>{
-          const pct=Math.round((cv.total/maxConv)*100);
-          const tx=cv.total>0?Math.round((cv.atend/cv.total)*100):0;
-          return(<div key={cv.nome} style={{marginBottom:12}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}>
-              <span style={{fontWeight:800}}>{cv.nome}</span>
-              <div style={{display:"flex",gap:12,fontSize:11}}>
-                <span style={{color:"var(--mt)"}}>{cv.total} sessões</span>
-                <span style={{fontWeight:800,color:tx>=80?"#34d399":tx>=60?"#f59e0b":"#f87171"}}>{tx}% presença</span>
-                <span style={{fontWeight:800,color:"#34d399"}}>{brl(cv.rec)}</span>
-              </div>
-            </div>
-            <div style={{height:8,borderRadius:4,background:"var(--sx)",overflow:"hidden"}}>
-              <div style={{width:pct+"%",height:"100%",background:"#60a5fa",borderRadius:4,transition:"width .5s"}}/>
-            </div>
-          </div>);
-        })}
-        {convArr.length===0&&<div className="muted" style={{fontSize:12}}>Nenhum dado.</div>}
-      </div>
-    </div>}
-
-    {/* ══ DASHBOARD ══ */}
-    {tab==="dashboard"&&(()=>{
-      const agHoje2=agenda.filter(a=>a.data===hoje_str);
-      const ocupSalas=new Set(agHoje2.map(a=>a.salaId));
-      const totalSalas2=salas.filter(s=>s.ativa!==false).length||1;
-      const pctOcup=Math.round((ocupSalas.size/totalSalas2)*100);
-      const pedVenc30=pedidos.filter(p=>p.dataValidade&&diffDays(hoje_str,p.dataValidade)>=0&&diffDays(hoje_str,p.dataValidade)<=30);
-      const chamAbDash=chamados.filter(c=>["aberto","andamento"].includes(c.status)).length;
-      return(<div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12,marginBottom:18}}>
-          {[
-            {icon:"📅",label:"Agendamentos Hoje",val:agHoje2.length,color:"#60a5fa"},
-            {icon:"✅",label:"Atendidos Hoje",val:agHoje2.filter(a=>["atendido","faturado"].includes(a.status)).length,color:"#34d399"},
-            {icon:"🏢",label:"Ocupação Salas",val:pctOcup+"%",color:"#f59e0b"},
-            {icon:"⏳",label:"Fila de Espera",val:fila.length,color:"#a78bfa"},
-            {icon:"📨",label:"Chamados Abertos",val:chamAbDash,color:chamAbDash>5?"#f87171":"#fb923c"},
-            {icon:"🩻",label:"Pedidos Vencendo",val:pedVenc30.length,color:"#fb923c"},
-            {icon:"👤",label:"Pacientes",val:pacientes.length,color:"#38bdf8"},
-            {icon:"🩺",label:"Profissionais",val:profissionais.filter(p=>["profissional","coordenador","coordenador_aba"].includes(p.role)).length,color:"#a3e635"},
-          ].map(k=>(
-            <div key={k.label} className="card" style={{padding:"14px 16px",borderTop:"3px solid "+k.color}}>
-              <div style={{fontSize:20,marginBottom:6}}>{k.icon}</div>
-              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:24,color:k.color,lineHeight:1,letterSpacing:"-1px"}}>{k.val}</div>
-              <div style={{fontSize:10,fontWeight:800,letterSpacing:".6px",color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>{k.label}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-          <div className="card" style={{padding:18}}>
-            <div style={{fontWeight:900,fontSize:13,marginBottom:12}}>🏢 Ocupação das Salas — Hoje</div>
-            {salas.filter(s=>s.ativa!==false).slice(0,8).map(s=>{
-              const agS=agHoje2.filter(a=>a.salaId===s.id);
-              const pct=Math.min(100,Math.round((agS.length/8)*100));
-              return(<div key={s.id} style={{marginBottom:8}}>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:3}}>
-                  <span style={{color:"var(--mt)",fontWeight:700}}>{s.nome}</span>
-                  <span style={{fontWeight:900,color:s.cor||"#60a5fa"}}>{agS.length} sess.</span>
-                </div>
-                <div style={{height:6,borderRadius:3,background:"var(--sx)",overflow:"hidden"}}>
-                  <div style={{width:pct+"%",height:"100%",background:s.cor||"#60a5fa",borderRadius:3}}/>
-                </div>
-              </div>);
-            })}
-            {salas.filter(s=>s.ativa!==false).length===0&&<div className="muted" style={{fontSize:12}}>Nenhuma sala ativa.</div>}
-          </div>
-          <div className="card" style={{padding:18}}>
-            <div style={{fontWeight:900,fontSize:13,marginBottom:12}}>📨 Chamados por Status</div>
-            {STATUS_CHAMADO.map(st=>{
-              const cnt=chamados.filter(c=>c.status===st).length;
-              return(<div key={st} style={{marginBottom:8}}>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:3}}>
-                  <span style={{color:"var(--mt)",fontWeight:700}}>{LABEL_CHAMADO[st]}</span>
-                  <span style={{fontWeight:900,color:COR_CHAMADO[st]}}>{cnt}</span>
-                </div>
-                <div style={{height:6,borderRadius:3,background:"var(--sx)",overflow:"hidden"}}>
-                  <div style={{width:Math.round((cnt/(chamados.length||1))*100)+"%",height:"100%",background:COR_CHAMADO[st],borderRadius:3}}/>
-                </div>
-              </div>);
-            })}
-          </div>
-          <div className="card" style={{padding:18}}>
-            <div style={{fontWeight:900,fontSize:13,marginBottom:12}}>🩻 Pedidos Médicos — Alertas</div>
-            {pedVenc30.length===0&&<div style={{fontSize:12,color:"#34d399"}}>Nenhum vencendo nos próximos 30 dias</div>}
-            {pedVenc30.map(p=>{
-              const pac=pacientes.find(x=>x.id===Number(p.pacienteId));
-              const dias=diffDays(hoje_str,p.dataValidade);
-              return(<div key={p.id} style={{background:dias<=7?"#450a0a15":"#451a0315",border:"1px solid "+(dias<=7?"#f8717130":"#f59e0b30"),borderRadius:7,padding:"7px 9px",marginBottom:5,fontSize:11}}>
-                <b style={{color:dias<=7?"#f87171":"#f59e0b"}}>{dias<=7?"🚨":"⚠️"} {dias}d — {pac?.nome||"—"}</b>
-                <div style={{color:"var(--mt)",fontSize:10}}>{p.especialidade||p.tipo}</div>
-              </div>);
-            })}
-          </div>
-          <div className="card" style={{padding:18}}>
-            <div style={{fontWeight:900,fontSize:13,marginBottom:12}}>⏳ Fila de Espera por Especialidade</div>
-            {fila.length===0&&<div className="muted" style={{fontSize:12}}>Fila vazia.</div>}
-            {[...new Set(fila.map(f=>f.especialidade))].map(esp=>{
-              const cnt=fila.filter(f=>f.especialidade===esp).length;
-              const pct=Math.round((cnt/(fila.length||1))*100);
-              const cor=espCor(esp);
-              return(<div key={esp} style={{marginBottom:8}}>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:3}}>
-                  <span style={{color:"var(--mt)",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:160}}>{esp}</span>
-                  <span style={{fontWeight:900,color:cor}}>{cnt}</span>
-                </div>
-                <div style={{height:5,borderRadius:3,background:"var(--sx)",overflow:"hidden"}}>
-                  <div style={{width:pct+"%",height:"100%",background:cor,borderRadius:3}}/>
-                </div>
-              </div>);
-            })}
-          </div>
-        </div>
-      </div>);
-    })()}
-
-    {/* ══ RELATÓRIOS ══ */}
-    {tab==="relatorios"&&<RelatoriosTab agenda={agenda} pacientes={pacientes} profissionais={profissionais} procedimentos={procedimentos} showToast={showToast}/>}
-
-    {/* ══ ATIVIDADES DO SISTEMA ══ */}
-    {tab==="atividades"&&<AtividadesTab atividades={atividades} profissionais={profissionais}/>}
-
-    {/* ══ IMPORTAR DADOS ══ */}
-    {tab==="importar"&&<ImportarTab agenda={agenda} setAgenda={setAgenda} pacientes={pacientes} setPacientes={setPacientes} profissionais={profissionais} setProfissionais={setProfissionais} auth={auth} showToast={showToast}/>}
-
-    {/* ══ EXPORTAR ══ */}
-    {tab==="exportar"&&<ExportarTab agenda={agenda} pacientes={pacientes} profissionais={profissionais} procedimentos={procedimentos} salas={salas} filiais={filiais} chamados={chamados} showToast={showToast}/>}
-
-  </div>);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// APP ROOT
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// ATIVIDADES (Log de sistema)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// RELATÓRIOS GERENCIAIS
-// ═══════════════════════════════════════════════════════════════════════════════
-function MiniBar({label,value,max,color}){
-  const pct=max>0?Math.round((value/max)*100):0;
-  return(<div style={{marginBottom:6}}>
-    <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:2}}><span style={{color:"var(--mt)"}}>{label}</span><b style={{color}}>{value}</b></div>
-    <div style={{height:8,borderRadius:4,background:"var(--sx)",overflow:"hidden"}}>
-      <div style={{width:pct+"%",height:"100%",background:color,borderRadius:4,transition:"width .4s"}}/>
-    </div>
-  </div>);
-}
-function DonutChart({data,size=100}){
-  const total=data.reduce((s,d)=>s+d.v,0)||1;
-  let cum=0;
-  const r=40,cx=50,cy=50,circ=2*Math.PI*r;
-  return(<svg width={size} height={size} viewBox="0 0 100 100">
-    {data.map((d,i)=>{
-      const pct=d.v/total;
-      const off=circ*(1-pct);
-      const rot=-90+(cum/total)*360;
-      cum+=d.v;
-      return(<circle key={i} r={r} cx={cx} cy={cy} fill="none" stroke={d.c} strokeWidth={14} strokeDasharray={circ} strokeDashoffset={off} transform={"rotate("+rot+" 50 50)"} style={{transition:"stroke-dashoffset .4s"}}/>);
-    })}
-    <text x="50" y="55" textAnchor="middle" style={{fontSize:14,fontWeight:900,fill:"var(--tx)"}}>{total}</text>
-  </svg>);
-}
-// ═══════════════════════════════════════════════════════════════════════════════
-// RELATÓRIOS + DASHBOARD — página unificada com abas + exportação Excel
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// Helper: gerar CSV e forçar download
 function exportCSV(nome, cabecalho, linhas) {
   const esc = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
   const csv = [cabecalho, ...linhas].map(r => r.map(esc).join(",")).join("\n");
@@ -6659,6 +5452,10 @@ const TIPOS_USUARIO_DEF=[
   {role:"administrador",label:"Administrador",descr:"Acesso completo ao sistema",permissoes:["all"]},
 ];
 
+
+// Carregado sob demanda: a página de Gestão (relatórios, atividades,
+// importar/exportar) só é baixada quando o usuário abre essa aba.
+const GestaoPage = lazy(() => import("./pages/GestaoPage"));
 
 export default function App(){
   const [isDark,setIsDark]=useState(false);
@@ -6762,7 +5559,7 @@ export default function App(){
               <circle cx="13" cy="13" r="1.5" fill="#0f766e"/>
             </svg>
           </div>
-          {sidebarExpanded&&<div style={{display:"flex",flexDirection:"column",justifyContent:"center",gap:0,lineHeight:1}}><div style={{fontFamily:"'Outfit',sans-serif",fontWeight:500,fontSize:9,letterSpacing:"3.5px",textTransform:"uppercase",color:"#5eead4",opacity:.7,marginBottom:1}}>FOCOE</div><div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:20,letterSpacing:"-0.5px",background:"linear-gradient(135deg,#0d9488,#14b8a6,#5eead4)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1}}>Cuide</div></div>}
+          {sidebarExpanded&&<div style={{display:"flex",flexDirection:"column",justifyContent:"center",gap:0,lineHeight:1}}><div style={{fontFamily:"'Outfit',sans-serif",fontWeight:500,fontSize:9,letterSpacing:"3.5px",textTransform:"uppercase",color:"#a78bfa",opacity:.7,marginBottom:1}}>FOCOE</div><div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:20,letterSpacing:"-0.5px",color:"#7c6af7",lineHeight:1}}>Cuide</div></div>}
         </div>
         <div className="sidebar-user">
           <div className="user-avatar">{(userProf?.nome||auth.usuario||"?")[0].toUpperCase()}</div>
@@ -6815,7 +5612,7 @@ export default function App(){
       {page==="financeiro"&&<FinanceiroPage agenda={agenda} setAgenda={setAgenda} pacientes={pacientes} profissionais={profissionais} procedimentos={procedimentos} convenios={convenios} showToast={showToast} naoRecebiveis={naoRecebiveis} setNaoRecebiveis={setNaoRecebiveis}/>}
       {page==="chamados"&&<ChamadosPage chamados={chamados} setChamados={setChamados} showToast={showToast} fila={fila} setFila={setFila} pacientes={pacientes}/>}
 
-      {page==="gestao"&&<GestaoPage agenda={agenda} pacientes={pacientes} profissionais={profissionais} procedimentos={procedimentos} convenios={convenios} salas={salas} filiais={filiais} chamados={chamados} fila={fila} pedidos={pedidos} auth={auth} showToast={showToast} atividades={atividades} setPacientes={setPacientes} setProfissionais={setProfissionais} setAgenda={setAgenda}/>}
+      {page==="gestao"&&<Suspense fallback={<div style={{padding:40,textAlign:"center"}}>Carregando…</div>}><GestaoPage agenda={agenda} pacientes={pacientes} profissionais={profissionais} procedimentos={procedimentos} convenios={convenios} salas={salas} filiais={filiais} chamados={chamados} fila={fila} pedidos={pedidos} auth={auth} showToast={showToast} atividades={atividades} setPacientes={setPacientes} setProfissionais={setProfissionais} setAgenda={setAgenda}/></Suspense>}
             {page==="manuais"&&<ManuaisPage manuais={manuais} setManuais={setManuais} showToast={showToast} templatePaciente={templatePaciente} setTemplatePaciente={setTemplatePaciente} templateProfissional={templateProfissional} setTemplateProfissional={setTemplateProfissional} modelosEvolucao={modelosEvolucaoEdit} setModelosEvolucao={setModelosEvolucaoEdit}/>}
 
     </main>
@@ -6886,5 +5683,3 @@ export default function App(){
     {toast&&<div className="toast" style={{background:{ok:"#022c22",err:"#3f0a0a",warn:"#3f1a03"}[toast.type]||"#022c22",color:{ok:"#34d399",err:"#f87171",warn:"#fbbf24"}[toast.type]||"#34d399",border:"1px solid "+(toast.type==="ok"?"#34d39930":toast.type==="err"?"#f8717130":"#fbbf2430")}}>{toast.msg}</div>}
   </div>);
 }
-
-

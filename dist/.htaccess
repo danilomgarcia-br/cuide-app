@@ -1,0 +1,33 @@
+# Garante o Content-Type correto para os módulos JS gerados pelo Vite.
+# Sem isso, alguns servidores Apache/LiteSpeed (como o da Hostinger) podem
+# devolver "text/plain" para .js, e o navegador recusa carregar como módulo.
+<IfModule mod_mime.c>
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+</IfModule>
+
+# Reforço: em alguns painéis LiteSpeed o AddType acima é ignorado porque o
+# tipo MIME já vem definido em outro lugar do servidor. Isso força o
+# cabeçalho de verdade na resposta, independente do que o AddType conseguiu.
+<IfModule mod_headers.c>
+  <FilesMatch "\.js$">
+    Header set Content-Type "application/javascript"
+  </FilesMatch>
+  <FilesMatch "\.mjs$">
+    Header set Content-Type "application/javascript"
+  </FilesMatch>
+  <FilesMatch "\.css$">
+    Header set Content-Type "text/css"
+  </FilesMatch>
+</IfModule>
+
+# Fallback de SPA: qualquer rota que não seja um arquivo/pasta real cai no
+# index.html, para o React Router (se usado) funcionar em URLs diretas.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  RewriteRule ^ index.html [L]
+</IfModule>

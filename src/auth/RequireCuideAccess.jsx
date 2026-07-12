@@ -37,7 +37,7 @@ export function RequireCuideAccess({ session, children }) {
     justifyContent: "center",
     background: t.bg,
     color: t.text2,
-    fontFamily: "'DM Sans', system-ui, sans-serif",
+    fontFamily: "'Inter', system-ui, sans-serif",
     padding: 16,
   };
 

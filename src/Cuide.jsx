@@ -1,18 +1,11 @@
 import { useMemo, useState, useEffect, lazy, Suspense } from "react";
 import * as XLSX from "xlsx";
-import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TEMA
 // ═══════════════════════════════════════════════════════════════════════════════
 const DARK={bg:"#0f0f14",sidebar:"#16161f",card:"#16161f",cardBorder:"#2a2a3d",inp:"#1e1e2a",inpBorder:"#2a2a3d",text:"#e8e8f0",muted:"#606080",label:"#606080",secBox:"#1e1e2a",secBorder:"#2a2a3d",filterBar:"#16161f",filterBorder:"#2a2a3d",calHead:"#16161f",day:"#1e1e2a",dayBorder:"#2a2a3d",dayHover:"#252535",navBtn:"#9090b0",navHover:"#1e1e2a",navActive:"#7c6af71f",gridRow:"#1e1e2a",modal:"#16161f",modalBg:"rgba(0,0,0,.85)",upload:"#2a2a3d",scrollTrack:"#16161f",scrollThumb:"#2a2a3d",chipBorder:"#2a2a3d",sideBorder:"#2a2a3d"};
 const LIGHT={bg:"#f2f2f7",sidebar:"#ffffff",card:"#ffffff",cardBorder:"#d1d1d6",inp:"#f4f4f8",inpBorder:"#d1d1d6",text:"#1c1c1e",muted:"#8e8e93",label:"#8e8e93",secBox:"#f4f4f8",secBorder:"#d1d1d6",filterBar:"#ffffff",filterBorder:"#d1d1d6",calHead:"#ffffff",day:"#f4f4f8",dayBorder:"#d1d1d6",dayHover:"#e5e5ea",navBtn:"#3a3a3c",navHover:"#f4f4f8",navActive:"#7c6af71a",gridRow:"#f4f4f8",modal:"#ffffff",modalBg:"rgba(15,23,42,.5)",upload:"#d1d1d6",scrollTrack:"#f2f2f7",scrollThumb:"#d1d1d6",chipBorder:"#d1d1d6",sideBorder:"#d1d1d6"};
-// "Médio" — mesmos valores de html.mid-mode do style.css do MiContas
-// (--bg:#363640 --surface:#40404c --surface2:#4a4a58 --surface3:#565664
-// --border:#5c5c6c --accent:#a394fb --text:#f5f5fa --text2:#c7c7d6 --text3:#9797a8),
-// seguindo o mesmo mapeamento de campos usado em DARK/LIGHT acima.
-const MID={bg:"#363640",sidebar:"#40404c",card:"#40404c",cardBorder:"#5c5c6c",inp:"#4a4a58",inpBorder:"#5c5c6c",text:"#f5f5fa",muted:"#9797a8",label:"#9797a8",secBox:"#4a4a58",secBorder:"#5c5c6c",filterBar:"#40404c",filterBorder:"#5c5c6c",calHead:"#40404c",day:"#4a4a58",dayBorder:"#5c5c6c",dayHover:"#565664",navBtn:"#c7c7d6",navHover:"#4a4a58",navActive:"#a394fb1f",gridRow:"#4a4a58",modal:"#40404c",modalBg:"rgba(0,0,0,.7)",upload:"#5c5c6c",scrollTrack:"#40404c",scrollThumb:"#5c5c6c",chipBorder:"#5c5c6c",sideBorder:"#5c5c6c"};
-const THEMES_CUIDE={dark:DARK,mid:MID,light:LIGHT};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONSTANTES — todas definidas ANTES de qualquer função ou seed
@@ -313,7 +306,7 @@ const CSS="*{box-sizing:border-box}body{margin:0}"+
 ".sidebar-inner{display:flex;flex-direction:column;height:100%;min-width:0}"+
 ".sidebar-brand{display:flex;align-items:center;gap:10px;padding:14px 13px 10px;border-bottom:1px solid var(--sbd);flex-shrink:0}"+
 ".brand-logo{width:40px;height:40px;border-radius:14px;background:#7c6af7;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;box-shadow:0 6px 18px #7c6af770;position:relative;overflow:hidden}"+
-".brand-text{font-family:'DM Serif Display',serif;font-weight:900;font-size:18px;color:#7c6af7;white-space:nowrap;overflow:hidden;line-height:1.1}"+
+".brand-text{font-family:'Outfit',sans-serif;font-weight:900;font-size:18px;color:#7c6af7;white-space:nowrap;overflow:hidden;line-height:1.1}"+
 ".sidebar-user{padding:8px 12px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--sbd);flex-shrink:0}"+
 ".user-avatar{width:28px;height:28px;border-radius:8px;background:#7c6af720;border:1px solid #7c6af730;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:800;color:#a78bfa}"+
 ".user-info{overflow:hidden;flex:1}"+
@@ -364,7 +357,7 @@ const CSS="*{box-sizing:border-box}body{margin:0}"+
 ".modal{background:var(--md);border:1px solid var(--sc);border-radius:18px;padding:22px;width:540px;max-width:100%;margin:auto;animation:popIn .18s ease}"+
 "@keyframes popIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:none}}"+
 ".modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}"+
-".modal-head h2{margin:0;font-family:'DM Serif Display',serif;font-weight:900;font-size:18px}"+
+".modal-head h2{margin:0;font-family:'Outfit',sans-serif;font-weight:900;font-size:18px}"+
 ".icon-btn{background:transparent;color:var(--mt);border:none;font-size:22px;cursor:pointer;line-height:1;border-radius:7px;padding:2px 5px;transition:.12s}"+
 ".icon-btn:hover{background:var(--sx);color:var(--tx)}"+
 /* ── LAYOUT HELPERS ──────────────────────────────────────────────── */
@@ -378,11 +371,11 @@ const CSS="*{box-sizing:border-box}body{margin:0}"+
 ".actions{display:flex;gap:7px;margin-top:3px;justify-content:flex-end}"+
 ".page-wrap{padding:16px;overflow:auto;flex:1;min-height:0}"+
 ".page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:7px}"+
-".page-head h1{margin:0;font-family:'DM Serif Display',serif;font-weight:900;font-size:20px}"+
+".page-head h1{margin:0;font-family:'Outfit',sans-serif;font-weight:900;font-size:20px}"+
 ".muted{color:var(--mt)}"+
 /* ── CALENDAR ────────────────────────────────────────────────────── */
 ".calendar-head{padding:9px 13px;background:var(--ch);border-bottom:1px solid var(--fc);display:flex;align-items:center;gap:7px;flex-shrink:0}"+
-".calendar-title{font-family:'DM Serif Display',serif;font-weight:900;font-size:16px;min-width:190px}"+
+".calendar-title{font-family:'Outfit',sans-serif;font-weight:900;font-size:16px;min-width:190px}"+
 ".dow-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px}"+
 ".dow{text-align:center;font-size:9px;font-weight:900;color:var(--lb);letter-spacing:.8px;padding:2px 0}"+
 ".month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}"+
@@ -477,7 +470,7 @@ function AlertPanel({alertas,setAlertas,pacientes,profissionais,agenda,auth,open
     <div className={"alert-panel"+(open?" open":"")}>
       <div style={{padding:"14px 14px 10px",borderBottom:"1px solid var(--sbd)",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
         <div>
-          <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:15}}>🔔 Alertas</div>
+          <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:15}}>🔔 Alertas</div>
           <div style={{fontSize:10,color:"var(--mt)",marginTop:1}}>{pend.length} pendente(s) de {alertas.length}</div>
         </div>
         <div style={{display:"flex",gap:5,alignItems:"center"}}>
@@ -3376,7 +3369,7 @@ function RecebimentosPanel({profissionais,procedimentos,convenios,lancamentos,ag
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:14}}>
       {[{label:"Sessões com repasse",val:totSess,color:"#a78bfa"},{label:"Receita bruta",val:brl(totBruto),color:"#f59e0b"},{label:"Total a repassar",val:brl(totRep),color:"#34d399"}].map(k=>(
         <div key={k.label} className="card" style={{padding:"12px 16px",borderTop:"3px solid "+k.color}}>
-          <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:k.color,lineHeight:1}}>{k.val}</div>
+          <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:k.color,lineHeight:1}}>{k.val}</div>
           <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",letterSpacing:".5px",marginTop:4}}>{k.label}</div>
         </div>
       ))}
@@ -3399,7 +3392,7 @@ function RecebimentosPanel({profissionais,procedimentos,convenios,lancamentos,ag
               <div style={{fontSize:10,color:"var(--mt)",marginTop:2}}>{(prof.especialidades||[""])[0]} · {prof.nivelRepasse||"Pleno"}</div>
             </div>
             <div style={{textAlign:"right"}}>
-              <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:"#34d399",lineHeight:1}}>{brl(tRep)}</div>
+              <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:"#34d399",lineHeight:1}}>{brl(tRep)}</div>
               <div style={{fontSize:9,color:"var(--mt)",marginTop:1}}>a repassar</div>
             </div>
           </div>
@@ -4309,7 +4302,7 @@ function ManuaisPage({manuais,setManuais,showToast,templatePaciente,setTemplateP
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
           <div style={{width:48,height:48,borderRadius:12,background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🏛️</div>
           <div>
-            <div style={{fontWeight:900,fontSize:18,fontFamily:"'DM Serif Display',serif"}}>Assinatura Digital Gov.br</div>
+            <div style={{fontWeight:900,fontSize:18,fontFamily:"'Outfit',sans-serif"}}>Assinatura Digital Gov.br</div>
             <div style={{fontSize:12,opacity:.85,marginTop:2}}>Plataforma oficial do Governo Federal para assinatura eletrônica com validade jurídica</div>
           </div>
         </div>
@@ -4724,22 +4717,22 @@ function FinanceiroPage({agenda,pacientes,profissionais,procedimentos,convenios,
     {/* KPI sumário topo */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8,marginBottom:16}}>
       <div className="card" style={{padding:"12px 14px",borderTop:"3px solid #22c55e"}}>
-        <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:"#34d399"}}>{brl(totalGeral)}</div>
+        <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:"#34d399"}}>{brl(totalGeral)}</div>
         <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>Faturado no período</div>
         <div style={{fontSize:10,color:"var(--mt)"}}>{faturados.length} sessões</div>
       </div>
       <div className="card" style={{padding:"12px 14px",borderTop:"3px solid #f97316"}}>
-        <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:20,color:"#f97316"}}>{pendencias.length}</div>
+        <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:20,color:"#f97316"}}>{pendencias.length}</div>
         <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>📭 Pendências</div>
         <div style={{fontSize:10,color:"var(--mt)"}}>não faturadas</div>
       </div>
       <div className="card" style={{padding:"12px 14px",borderTop:"3px solid #dc2626"}}>
-        <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:20,color:"#dc2626"}}>{recursos.length}</div>
+        <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:20,color:"#dc2626"}}>{recursos.length}</div>
         <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>🚫 Recursos</div>
         <div style={{fontSize:10,color:"var(--mt)"}}>glosas a recorrer</div>
       </div>
       {totalGeral+totalPerdas>0&&<div className="card" style={{padding:"12px 14px",borderTop:"3px solid #a78bfa"}}>
-        <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:"#a78bfa"}}>{Math.round(totalPerdas/(totalGeral+totalPerdas)*100)}%</div>
+        <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:"#a78bfa"}}>{Math.round(totalPerdas/(totalGeral+totalPerdas)*100)}%</div>
         <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>Taxa de perda</div>
         <div style={{fontSize:10,color:"var(--mt)"}}>sobre receita potencial</div>
       </div>}
@@ -5375,7 +5368,7 @@ function CaixinhaPage({caixa,setCaixa,pacientes,profissionais,procedimentos,agen
     {/* ── KPIs ── */}
     <div style={{display:"grid",gridTemplateColumns:"1fr repeat(3,1fr)",gap:8,marginBottom:16}}>
       <div className="card" style={{padding:"14px 16px",borderTop:"3px solid #4ade80"}}>
-        <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:24,color:"#4ade80"}}>{brl(totalGeral)}</div>
+        <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:24,color:"#4ade80"}}>{brl(totalGeral)}</div>
         <div style={{fontSize:10,fontWeight:900,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>Total do período</div>
         <div style={{fontSize:10,color:"var(--mt)"}}>{entradas.length} recebimento(s)</div>
       </div>
@@ -5464,22 +5457,11 @@ const TIPOS_USUARIO_DEF=[
 // importar/exportar) só é baixada quando o usuário abre essa aba.
 const GestaoPage = lazy(() => import("./pages/GestaoPage"));
 
-export default function App({themeKey:themeKeyExterno,onToggleTheme,themeLabel}={}){
-  // Se a casca de SSO (App.jsx / theme/cuideTheme.js) fornecer o tema,
-  // usamos ela como fonte única de verdade — assim o botão de tema do
-  // AppSwitcher (barra de cima), da tela de login e daqui de dentro do
-  // Cuide ficam sincronizados nos MESMOS 3 modos do MiContas (escuro/
-  // médio/claro), em vez de serem sistemas desconectados como antes.
-  // Se ninguém fornecer nada (uso avulso do Cuide fora da casca), cai
-  // num ciclo local de 3 modos equivalente.
-  const [themeKeyLocal,setThemeKeyLocal]=useState("dark");
-  const themeKey=themeKeyExterno||themeKeyLocal;
-  const CICLO=["dark","mid","light"];
-  const toggleTheme=onToggleTheme||(()=>setThemeKeyLocal(k=>CICLO[(CICLO.indexOf(k)+1)%CICLO.length]));
-  const ROTULO_LOCAL={dark:"🌙 Escuro",mid:"🌓 Médio",light:"☀️ Claro"};
+export default function App(){
+  const [isDark,setIsDark]=useState(false);
   const [sidebarExpanded,setSidebarExpanded]=useState(true);
   const [alertPanelOpen,setAlertPanelOpen]=useState(false);
-  const T=THEMES_CUIDE[themeKey]||DARK;
+  const T=isDark?DARK:LIGHT;
   const themeVars=getThemeVars(T);
 
   const [page,setPage]=useState("agenda");
@@ -5550,7 +5532,7 @@ export default function App({themeKey:themeKeyExterno,onToggleTheme,themeLabel}=
   const SBW=sidebarExpanded?220:58;
 
   return(<div className="app-shell">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700;800;900&family=Outfit:wght@700;800;900&display=swap"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"/>
     <style>{themeVars+CSS}</style>
 
@@ -5577,7 +5559,7 @@ export default function App({themeKey:themeKeyExterno,onToggleTheme,themeLabel}=
               <circle cx="13" cy="13" r="1.5" fill="#0f766e"/>
             </svg>
           </div>
-          {sidebarExpanded&&<div style={{display:"flex",flexDirection:"column",justifyContent:"center",gap:0,lineHeight:1}}><div style={{fontFamily:"'DM Serif Display',serif",fontWeight:500,fontSize:9,letterSpacing:"3.5px",textTransform:"uppercase",color:"#a78bfa",opacity:.7,marginBottom:1}}>FOCOE</div><div style={{fontFamily:"'DM Serif Display',serif",fontWeight:800,fontSize:20,letterSpacing:"-0.5px",color:"#7c6af7",lineHeight:1}}>Cuide</div></div>}
+          {sidebarExpanded&&<div style={{display:"flex",flexDirection:"column",justifyContent:"center",gap:0,lineHeight:1}}><div style={{fontFamily:"'Outfit',sans-serif",fontWeight:500,fontSize:9,letterSpacing:"3.5px",textTransform:"uppercase",color:"#a78bfa",opacity:.7,marginBottom:1}}>FOCOE</div><div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:20,letterSpacing:"-0.5px",color:"#7c6af7",lineHeight:1}}>Cuide</div></div>}
         </div>
         <div className="sidebar-user">
           <div className="user-avatar">{(userProf?.nome||auth.usuario||"?")[0].toUpperCase()}</div>
@@ -5603,10 +5585,10 @@ export default function App({themeKey:themeKeyExterno,onToggleTheme,themeLabel}=
         </nav>
         <div className="sidebar-footer">
           {sidebarExpanded?<>
-            <button className="btn secondary" style={{width:"100%",fontSize:11,display:"flex",alignItems:"center",gap:5,justifyContent:"center"}} onClick={toggleTheme}>{themeLabel||ROTULO_LOCAL[themeKey]}</button>
+            <button className="btn secondary" style={{width:"100%",fontSize:11,display:"flex",alignItems:"center",gap:5,justifyContent:"center"}} onClick={()=>setIsDark(d=>!d)}>{isDark?"☀️ Modo Claro":"🌙 Modo Escuro"}</button>
             <button className="btn secondary" style={{width:"100%",fontSize:11}} onClick={()=>setLoginOpen(true)}>🔐 Trocar usuário</button>
           </>:<>
-            <button className="nav-btn" onClick={toggleTheme} style={{justifyContent:"center"}}><span className="nav-icon">{{dark:"🌙",mid:"🌓",light:"☀️"}[themeKey]}</span><span className="nav-tooltip">{themeLabel||ROTULO_LOCAL[themeKey]}</span></button>
+            <button className="nav-btn" onClick={()=>setIsDark(d=>!d)} style={{justifyContent:"center"}}><span className="nav-icon">{isDark?"☀️":"🌙"}</span><span className="nav-tooltip">{isDark?"Modo Claro":"Modo Escuro"}</span></button>
             <button className="nav-btn" onClick={()=>setLoginOpen(true)} style={{justifyContent:"center"}}><span className="nav-icon">🔐</span><span className="nav-tooltip">Trocar usuário</span></button>
           </>}
         </div>
@@ -5617,7 +5599,6 @@ export default function App({themeKey:themeKeyExterno,onToggleTheme,themeLabel}=
     <ChamadoButton setChamados={setChamados} showToast={showToast}/>
 
     <main className="main">
-      <ErrorBoundary key={page}>
       {page==="agenda"&&<MainAgenda auth={auth} agenda={agenda} setAgenda={setAgenda} pacientes={pacientes} profissionais={profissionais} salas={salas} filiais={filiais} alertas={alertas} setAlertas={setAlertas} onAbrirNovo={abrirNovo} onAbrirSessao={abrirSessao}/>}
       {page==="espelho"&&<EspelhoAgendaPage data={selDate} agenda={agenda} pacientes={pacientes} profissionais={profissionais} salas={salas} filiais={filiais} convenios={convenios} procedimentos={procedimentos} horariosF={horariosF} onFecharHorario={toggleFecharHorario} onAbrirAgendamento={d=>abrirNovo(d.data,{profissionalId:d.profId})} onAbrirSessao={abrirSessao} onBuscaInteligente={()=>setPage("fila")}/>}
       {page==="salasMapa"&&<MapeamentoSalasPage data={selDate} agenda={agenda} salas={salas} filiais={filiais} pacientes={pacientes} profissionais={profissionais} horariosF={horariosF} onFecharHorario={toggleFecharHorario} onAbrirAgendamento={d=>abrirNovo(d.data,{salaId:d.salaId})} onAbrirSessao={abrirSessao} onBuscaInteligente={()=>setPage("fila")}/>}
@@ -5633,7 +5614,7 @@ export default function App({themeKey:themeKeyExterno,onToggleTheme,themeLabel}=
 
       {page==="gestao"&&<Suspense fallback={<div style={{padding:40,textAlign:"center"}}>Carregando…</div>}><GestaoPage agenda={agenda} pacientes={pacientes} profissionais={profissionais} procedimentos={procedimentos} convenios={convenios} salas={salas} filiais={filiais} chamados={chamados} fila={fila} pedidos={pedidos} auth={auth} showToast={showToast} atividades={atividades} setPacientes={setPacientes} setProfissionais={setProfissionais} setAgenda={setAgenda}/></Suspense>}
             {page==="manuais"&&<ManuaisPage manuais={manuais} setManuais={setManuais} showToast={showToast} templatePaciente={templatePaciente} setTemplatePaciente={setTemplatePaciente} templateProfissional={templateProfissional} setTemplateProfissional={setTemplateProfissional} modelosEvolucao={modelosEvolucaoEdit} setModelosEvolucao={setModelosEvolucaoEdit}/>}
-      </ErrorBoundary>
+
     </main>
     {agModal&&<AgendaModal auth={auth} profissionais={profissionais} pacientes={pacientes} procedimentos={procedimentos} salas={salas} agendamentos={agenda} convenios={convenios} manuais={manuais} filiais={filiais} editing={agEditing} defaultData={selDate} defaultProfId={agDefault.profissionalId} defaultSalaId={agDefault.salaId} onClose={()=>setAgModal(false)}
       onSave={(novo,multiplo)=>{

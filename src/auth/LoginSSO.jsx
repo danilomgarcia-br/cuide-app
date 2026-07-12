@@ -90,11 +90,10 @@ export function LoginSSO({ onLogin }) {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      fontFamily: "'DM Sans', system-ui, sans-serif",
+      fontFamily: "'Inter', system-ui, sans-serif",
       padding: 16,
       transition: "background .2s",
     }}>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap"/>
       <button
         type="button"
         onClick={ciclarTema}
@@ -128,7 +127,7 @@ export function LoginSSO({ onLogin }) {
             fontSize: 28,
             boxShadow: `0 8px 24px rgba(${t.accentRgb},.35)`,
           }}>🩺</div>
-          <h1 style={{ color: t.text, fontFamily: "'DM Serif Display', serif", fontSize: 28, fontWeight: 400, margin: 0 }}>
+          <h1 style={{ color: t.text, fontSize: 26, fontWeight: 700, margin: 0 }}>
             Cuide
           </h1>
           <p style={{ color: t.text2, fontSize: 13, marginTop: 6 }}>

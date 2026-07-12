@@ -8,16 +8,16 @@
 
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { ymd, brDate, hoje_str, STATUS_AG, STATUS_CHAMADO, COR_CHAMADO, LABEL_CHAMADO, PERFIL_LABEL, DIAS_SEMANA, TURNOS_H, maskCPF, maskPhone, exportCSV, espCor, profShort, brl, diffDays, rawD, toMin } from "../utils/cuideShared";
+import { ymd, brDate, hoje_str, STATUS_AG, STATUS_CHAMADO, COR_CHAMADO, LABEL_CHAMADO, PERFIL_LABEL, DIAS_SEMANA, TURNOS_H, maskCPF, maskPhone, exportCSV } from "../utils/cuideShared";
 
 function RelatoriosTab({agenda,pacientes,profissionais,procedimentos,showToast}){
   const [perRel_rt,setPerRel_rt]=useState("semana");
   const [fProfRel_rt,setFProfRel_rt]=useState("");
-  const diasBackR={hoje:1,semana:7,mes:30,trimestre:90}[perRel_rt]||7;
+  const diasBackR={hoje:1,semana:7,mes:30,trimestre:90}[perRel]||7;
   const dtLimR=new Date();dtLimR.setDate(dtLimR.getDate()-diasBackR);
   const agRel=agenda.filter(a=>{
   const dt=new Date(a.data);if(dt<dtLimR)return false;
-  if(fProfRel_rt&&String(a.profissionalId)!==String(fProfRel_rt))return false;
+  if(fProfRel_rt&&String(a.profissionalId)!==String(fProfRel))return false;
   return true;
   });
   const statusCountR=Object.keys(STATUS_AG).reduce((acc,k)=>({...acc,[k]:agRel.filter(a=>a.status===k).length}),{});
@@ -563,7 +563,7 @@ function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,sala
       <div style={{fontWeight:900,fontSize:12,color:"var(--mt)",letterSpacing:".5px",textTransform:"uppercase",minWidth:60}}>Hoje</div>
       {[{l:"Total",v:hojeTot,c:"#a78bfa"},{l:"Atendidos",v:hojeAtend,c:"#34d399"},{l:"Pendentes",v:hojePend,c:"#f59e0b"},{l:"Faltas",v:hojeFalta,c:"#f87171"}].map(s=>(
         <div key={s.l} style={{textAlign:"center",padding:"0 10px",borderLeft:"1px solid var(--sc)"}}>
-          <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:24,color:s.c,lineHeight:1}}>{s.v}</div>
+          <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:24,color:s.c,lineHeight:1}}>{s.v}</div>
           <div style={{fontSize:10,color:"var(--mt)",fontWeight:700,marginTop:2}}>{s.l}</div>
         </div>
       ))}
@@ -588,7 +588,7 @@ function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,sala
         <div key={k.label} style={{background:"var(--card)",border:"1px solid var(--cb)",borderTop:"3px solid "+k.color,borderRadius:14,padding:"14px 16px",position:"relative",overflow:"hidden"}}>
           {k.alert&&<div style={{position:"absolute",top:6,right:8,fontSize:9,fontWeight:900,color:"#f87171",background:"#f8717120",padding:"1px 6px",borderRadius:20}}>ALERTA</div>}
           <div style={{fontSize:18,marginBottom:6}}>{k.icon}</div>
-          <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:k.small?18:26,color:k.color,lineHeight:1,letterSpacing:"-1px"}}>{k.val}</div>
+          <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:k.small?18:26,color:k.color,lineHeight:1,letterSpacing:"-1px"}}>{k.val}</div>
           <div style={{fontSize:10,fontWeight:800,letterSpacing:".6px",color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>{k.label}</div>
           <div style={{fontSize:10,color:"var(--mt)",marginTop:2,fontStyle:"italic"}}>{k.sub}</div>
         </div>
@@ -749,7 +749,7 @@ function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,sala
             </div>
             <div style={{textAlign:"right",fontWeight:800,fontSize:12,color:"#34d399"}}>{brl(prof.rec)}</div>
             <div style={{textAlign:"center"}}>
-              <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:"50%",fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:14,background:notaCor+"20",color:notaCor,border:"2px solid "+notaCor}}>{prof.perf}</span>
+              <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:"50%",fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:14,background:notaCor+"20",color:notaCor,border:"2px solid "+notaCor}}>{prof.perf}</span>
             </div>
           </div>);
         })}
@@ -773,7 +773,7 @@ function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,sala
           {[{l:"Total",v:chamados.length,c:"#a78bfa"},{l:"Abertos",v:chamados.filter(c=>c.status==="aberto").length,c:"#f59e0b"},{l:"Andamento",v:chamados.filter(c=>c.status==="andamento").length,c:"#818cf8"},{l:"Encerrados",v:chamEnc,c:"#34d399"}].map(k=>(
             <div key={k.l} style={{background:"var(--sx)",borderRadius:9,padding:"10px 12px"}}>
               <div style={{fontSize:10,color:"var(--mt)",fontWeight:800,marginBottom:2}}>{k.l}</div>
-              <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:k.c}}>{k.v}</div>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:22,color:k.c}}>{k.v}</div>
             </div>
           ))}
         </div>
@@ -798,7 +798,7 @@ function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,sala
           {[{l:"Total",v:pedidos.length,c:"#a78bfa"},{l:"Venc. 30d",v:pedVenc30.length,c:"#f59e0b"},{l:"Urgente 7d",v:pedVenc7.length,c:"#f87171"},{l:"Vencidos",v:pedVencidos.length,c:"#64748b"}].map(k=>(
             <div key={k.l} style={{background:"var(--sx)",borderRadius:9,padding:"10px 12px"}}>
               <div style={{fontSize:10,color:"var(--mt)",fontWeight:800,marginBottom:2}}>{k.l}</div>
-              <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:k.c}}>{k.v}</div>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:22,color:k.c}}>{k.v}</div>
             </div>
           ))}
         </div>
@@ -839,7 +839,7 @@ function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,sala
               return(<div key={e.esp} style={{background:"var(--sx)",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid "+cor}}>
                 <div style={{fontSize:11,fontWeight:800,color:cor,marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.esp}</div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:5}}>
-                  <span style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:"var(--tx)"}}>{e.total}</span>
+                  <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:22,color:"var(--tx)"}}>{e.total}</span>
                   <span style={{fontSize:11,fontWeight:800,color:txP>=80?"#34d399":txP>=60?"#f59e0b":"#f87171"}}>{txP}% pres.</span>
                 </div>
                 <div style={{height:4,borderRadius:2,background:"var(--cb)",overflow:"hidden"}}>
@@ -863,7 +863,7 @@ function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,sala
             <div style={{fontSize:20,marginBottom:8}}>{ind.icon}</div>
             <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",letterSpacing:".5px",textTransform:"uppercase",marginBottom:6}}>{ind.label}</div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:8}}>
-              <span style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:30,color:ok?ind.cor:"#f87171",lineHeight:1,letterSpacing:"-1.5px"}}>{ind.val}{ind.unit}</span>
+              <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:30,color:ok?ind.cor:"#f87171",lineHeight:1,letterSpacing:"-1.5px"}}>{ind.val}{ind.unit}</span>
               <div style={{textAlign:"right"}}>
                 <div style={{fontSize:10,color:"var(--mt)"}}>Meta</div>
                 <div style={{fontSize:14,fontWeight:900,color:"var(--mt)"}}>{ind.meta}{ind.unit}</div>
@@ -895,7 +895,7 @@ function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,sala
             const label=w===3?"Esta sem.":"Sem. -"+(3-w);
             return(<div key={w} style={{background:"var(--sx)",borderRadius:10,padding:"14px",textAlign:"center"}}>
               <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",marginBottom:8}}>{label}</div>
-              <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:tx>=80?"#34d399":tx>=60?"#f59e0b":"#f87171"}}>{tx}%</div>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:22,color:tx>=80?"#34d399":tx>=60?"#f59e0b":"#f87171"}}>{tx}%</div>
               <div style={{fontSize:10,color:"var(--mt)",marginTop:2}}>presença</div>
               <div style={{marginTop:8,display:"flex",justifyContent:"space-around",fontSize:10}}>
                 <span style={{color:"var(--tx)",fontWeight:700}}>{ags.length} sess.</span>
@@ -912,22 +912,22 @@ function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,sala
       {/* ── KPIs financeiros de salas ── */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))",gap:8,marginBottom:14}}>
         <div className="card" style={{padding:"12px 14px",borderTop:"3px solid #a78bfa"}}>
-          <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:"#a78bfa"}}>{ocupMedia}%</div>
+          <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:"#a78bfa"}}>{ocupMedia}%</div>
           <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>Ocupação média</div>
           <div style={{fontSize:10,color:"var(--mt)"}}>{salaStats.length} sala(s) ativas</div>
         </div>
         <div className="card" style={{padding:"12px 14px",borderTop:"3px solid #ef4444"}}>
-          <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:"#f87171"}}>{brl(custoSalasTotal)}</div>
+          <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:"#f87171"}}>{brl(custoSalasTotal)}</div>
           <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>Custo mensal salas</div>
           <div style={{fontSize:10,color:"var(--mt)"}}>soma de todas as salas</div>
         </div>
         <div className="card" style={{padding:"12px 14px",borderTop:"3px solid #34d399"}}>
-          <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:"#34d399"}}>{brl(receitaSalasTotal)}</div>
+          <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:"#34d399"}}>{brl(receitaSalasTotal)}</div>
           <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>Receita nas salas</div>
           <div style={{fontSize:10,color:"var(--mt)"}}>sessões faturadas no período</div>
         </div>
         {roiSalas!==null&&<div className="card" style={{padding:"12px 14px",borderTop:"3px solid "+(roiSalas>=0?"#22c55e":"#ef4444")}}>
-          <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:22,color:roiSalas>=0?"#34d399":"#f87171"}}>{roiSalas>=0?"+":""}{roiSalas}%</div>
+          <div style={{fontFamily:"Outfit,sans-serif",fontWeight:900,fontSize:22,color:roiSalas>=0?"#34d399":"#f87171"}}>{roiSalas>=0?"+":""}{roiSalas}%</div>
           <div style={{fontSize:10,fontWeight:800,color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>ROI salas</div>
           <div style={{fontSize:10,color:"var(--mt)"}}>(receita − custo) / custo</div>
         </div>}
@@ -947,7 +947,7 @@ function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,sala
                 <div style={{fontSize:10,color:"var(--mt)"}}>{sala.filial}</div>
                 {sala.especialidade&&<div style={{fontSize:10,color:espCor(sala.especialidade),fontWeight:700,marginTop:1}}>{sala.especialidade}</div>}
               </div>
-              <span style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:26,color:corBarra,lineHeight:1}}>{sala.pct}%</span>
+              <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:26,color:corBarra,lineHeight:1}}>{sala.pct}%</span>
             </div>
             {/* Barra principal */}
             <div style={{height:7,borderRadius:4,background:"var(--sx)",overflow:"hidden",marginBottom:8}}>
@@ -1092,7 +1092,7 @@ function GestaoPage({agenda,pacientes,profissionais,procedimentos,convenios,sala
           ].map(k=>(
             <div key={k.label} className="card" style={{padding:"14px 16px",borderTop:"3px solid "+k.color}}>
               <div style={{fontSize:20,marginBottom:6}}>{k.icon}</div>
-              <div style={{fontFamily:"'DM Serif Display',serif",fontWeight:900,fontSize:24,color:k.color,lineHeight:1,letterSpacing:"-1px"}}>{k.val}</div>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:900,fontSize:24,color:k.color,lineHeight:1,letterSpacing:"-1px"}}>{k.val}</div>
               <div style={{fontSize:10,fontWeight:800,letterSpacing:".6px",color:"var(--mt)",textTransform:"uppercase",marginTop:3}}>{k.label}</div>
             </div>
           ))}
